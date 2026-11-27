@@ -52,7 +52,7 @@ export default function SceneView({ live, sceneId }: { live: Live; sceneId?: str
 
 function Footer({ live, scene }: { live: Live; scene: Scene }) {
   const sc = visibleScores(live);
-  if (scene.type === "welcome" || scene.type === "slides") return null;
+  if (scene.type === "welcome" || scene.type === "slides" || scene.type === "attendance") return null;
   return (
     <div className="footer">
       <div className="ticker">
@@ -68,6 +68,8 @@ function Footer({ live, scene }: { live: Live; scene: Scene }) {
 
 function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
   switch (scene.type) {
+    case "attendance":
+      return <Attendance live={live} />;
     case "welcome":
       return <Welcome live={live} />;
     case "leaderboard":
@@ -212,6 +214,46 @@ function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
   }
 }
 
+// ───────────────────────── Attendance (external QR set from the trainer view)
+function Attendance({ live }: { live: Live }) {
+  const url = live.settings.attendance_url || "";
+  const img = live.settings.attendance_image || "";
+  return (
+    <div className="welcome attend">
+      <div className="welcome-left">
+        <div className="kicker">Bank of Maldives · Retail & SME Banking</div>
+        <h1 className="hero" style={{ fontSize: 150 }}>
+          Mark your
+          <br />
+          <span className="grad">attendance</span>
+        </h1>
+        <div className="att-steps">
+          <div>
+            <b>1</b> Open your phone camera
+          </div>
+          <div>
+            <b>2</b> Scan the QR code
+          </div>
+          <div>
+            <b>3</b> Submit the attendance form
+          </div>
+        </div>
+      </div>
+      <div className="welcome-right glass">
+        <div className="join-t">Scan to sign in</div>
+        {img ? (
+          <img src={img} alt="Attendance QR code" style={{ width: 420, height: 420, objectFit: "contain", borderRadius: 16, background: "#fff", padding: 10 }} />
+        ) : url ? (
+          <Qr text={url} size={420} />
+        ) : (
+          <div className="qr-empty">QR code coming soon</div>
+        )}
+        <div className="join-s">Everyone, please sign in individually</div>
+      </div>
+    </div>
+  );
+}
+
 // ───────────────────────── Welcome
 function Welcome({ live }: { live: Live }) {
   const [url, setUrl] = useState("");
@@ -225,7 +267,6 @@ function Welcome({ live }: { live: Live }) {
           <br />
           2026
         </h1>
-        <p className="lead">Discuss. Decide. Submit. Every answer moves your team up the board.</p>
         <div className="team-chips">
           {live.teams.map((t, i) => (
             <div key={t.id} className="team-chip" style={{ ["--c" as any]: t.color, animationDelay: `${0.3 + i * 0.1}s` }}>

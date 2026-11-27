@@ -19,6 +19,7 @@ export type Live = {
   answers: Answer[];
   bonus: Bonus[];
   members: Member[];
+  settings: Record<string, string>;
   offset: number; // serverNow - localNow (ms)
   refresh: () => void;
 };
@@ -32,6 +33,7 @@ export function useLive(): Live {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [bonus, setBonus] = useState<Bonus[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [settings, setSettings] = useState<Record<string, string>>({});
   const [ready, setReady] = useState(false);
   const [connected, setConnected] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -54,6 +56,10 @@ export function useLive(): Live {
       answers: async () => {
         const { data } = await supabase.from("refresher_answers").select("*").limit(5000);
         if (data) setAnswers(data as Answer[]);
+      },
+      settings: async () => {
+        const { data } = await supabase.from("refresher_settings").select("key,value");
+        if (data) setSettings(Object.fromEntries((data as { key: string; value: string }[]).map((r) => [r.key, r.value])));
       },
       members: async () => {
         const { data } = await supabase.from("refresher_members").select("name,gender,job,unit,is_leader,team_id,present").order("name");
@@ -99,6 +105,7 @@ export function useLive(): Live {
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_bonus" }, () => reload("bonus"))
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_teams" }, () => reload("teams"))
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_members" }, () => reload("members"))
+      .on("postgres_changes", { event: "*", schema: "public", table: "refresher_settings" }, () => reload("settings"))
       .subscribe((status) => setConnected(status === "SUBSCRIBED"));
 
     // safety net polling in case a websocket drops on venue Wi-Fi
@@ -108,6 +115,7 @@ export function useLive(): Live {
       loaders.responses();
       loaders.bonus();
       loaders.members();
+      loaders.settings();
     }, 6000);
 
     return () => {
@@ -117,7 +125,7 @@ export function useLive(): Live {
     };
   }, [loaders]);
 
-  return { ready, connected, teams, state, responses, answers, bonus, members, offset, refresh };
+  return { ready, connected, teams, state, responses, answers, bonus, members, settings, offset, refresh };
 }
 
 // ───────── scoring

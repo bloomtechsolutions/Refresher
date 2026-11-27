@@ -7,6 +7,7 @@ type Base = { id: string; section: string; label: string };
 export type Scene = Base &
   (
     | { type: "welcome" }
+    | { type: "attendance" }
     | { type: "title"; kicker: string; title: string; subtitle?: string; presenter?: string; number?: string; accent?: string }
     | { type: "holding"; kicker: string; title: string; subtitle: string; presenter: string }
     | { type: "wordcloud"; prompt: string; hint: string; index: number }
@@ -48,6 +49,7 @@ export const WORD_PROMPTS = [
 
 export const SCENES: Scene[] = [
   // ───────── Opening
+  { id: "attendance", section: "open", label: "Attendance QR", type: "attendance" },
   { id: "welcome", section: "open", label: "Welcome & join", type: "welcome" },
   { id: "teams", section: "open", label: "Meet the teams", type: "leaderboard" },
   { id: "lineup", section: "open", label: "Find your team (spotlight)", type: "lineup" },

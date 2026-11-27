@@ -6,7 +6,7 @@ import { OPTION_COLORS, SCENES, SECTIONS, Scene, sceneById, Phase } from "@/lib/
 import SceneView, { AMS_LADDER, Stage, splitCalc } from "@/components/SceneView";
 
 const KEY = "bml-refresher-trainer";
-const ICON: Record<string, string> = { welcome: "👋", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
+const ICON: Record<string, string> = { welcome: "👋", attendance: "📝", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
 
 export default function TrainerPage() {
   const [pin, setPin] = useState<string | null>(null);
@@ -446,6 +446,8 @@ function Controls({ live, scene, pin, patch, phaseTo }: { live: Live; scene: Sce
     );
   }
 
+  if (scene.type === "attendance") return <AttendanceCtrl live={live} pin={pin} />;
+
   if (scene.type === "lineup") {
     const f = Number(d.focus || 0);
     return (
@@ -493,6 +495,43 @@ function Controls({ live, scene, pin, patch, phaseTo }: { live: Live; scene: Sce
       <p className="dim" style={{ margin: 0 }}>
         Nothing to control here. Team leaders see “Eyes on the screen” and the live leaderboard. Press Next → when ready.
       </p>
+    </div>
+  );
+}
+
+function AttendanceCtrl({ live, pin }: { live: Live; pin: string }) {
+  const [url, setUrl] = useState(live.settings.attendance_url || "");
+  const [img, setImg] = useState(live.settings.attendance_image || "");
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    setUrl(live.settings.attendance_url || "");
+    setImg(live.settings.attendance_image || "");
+  }, [live.settings.attendance_url, live.settings.attendance_image]);
+  const save = async () => {
+    const a = await supabase.rpc("refresher_set_setting", { p_pin: pin, p_key: "attendance_url", p_value: url });
+    const b = await supabase.rpc("refresher_set_setting", { p_pin: pin, p_key: "attendance_image", p_value: img });
+    setMsg(a.error || b.error ? rpcError(a.error || b.error) : "Saved ✓ The screen updates now.");
+    live.refresh();
+  };
+  return (
+    <div className="panel">
+      <h3>Attendance QR</h3>
+      <label className="dim" style={{ fontSize: 13 }}>
+        Attendance form link (we generate the QR from it)
+      </label>
+      <input className="input" placeholder="https://forms.office.com/…" value={url} onChange={(e) => setUrl(e.target.value)} />
+      <label className="dim" style={{ fontSize: 13, display: "block", marginTop: 10 }}>
+        Or a link to a ready-made QR image (used instead, if filled)
+      </label>
+      <input className="input" placeholder="https://…/qr.png" value={img} onChange={(e) => setImg(e.target.value)} />
+      <div className="ctrl" style={{ marginTop: 10 }}>
+        <button className="btn primary" onClick={save}>
+          Save
+        </button>
+        <span className="dim" style={{ fontSize: 13 }}>
+          {msg}
+        </span>
+      </div>
     </div>
   );
 }
