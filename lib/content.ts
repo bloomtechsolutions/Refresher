@@ -103,8 +103,8 @@ export const SCENES: Scene[] = [
     id: "p1-loanclose", section: "p1", label: "Automatic loan closure", type: "facts",
     kicker: "Live now", title: "Loan & financing closure is now automated",
     facts: [
-      { value: "1,000+", label: "Facilities closed", sub: "automatically in just 2 weeks" },
-      { value: "~333", label: "Hours saved", sub: "in the first 2 weeks" },
+      { value: "2,000+", label: "Facilities closed", sub: "automatically in just 5 weeks" },
+      { value: "660+", label: "Hours saved", sub: "in the first month" },
       { value: "0", label: "Closure requests", sub: "needed once fully settled" },
       { value: "MVR 1M", label: "Payoff limit", sub: "above this, not automatic" },
     ],
