@@ -52,15 +52,9 @@ export default function SceneView({ live, sceneId }: { live: Live; sceneId?: str
 
 function Footer({ live, scene }: { live: Live; scene: Scene }) {
   const sc = visibleScores(live);
-  const [url, setUrl] = useState("");
-  useEffect(() => setUrl(joinUrl().replace(/^https?:\/\//, "")), []);
   if (scene.type === "welcome" || scene.type === "slides") return null;
   return (
     <div className="footer">
-      <div className="brand">
-        <span className="logo-mark">B</span> BML Refresher <span className="dim">· {url}</span>
-        <span className={"dot " + (live.connected ? "on" : "")} />
-      </div>
       <div className="ticker">
         {sc.map((x, i) => (
           <span key={x.team.id} className="tick" style={{ ["--c" as any]: x.team.color }}>
@@ -117,7 +111,7 @@ function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
       return (
         <div className="pad">
           <div className="kicker">Session 1 · Team voices</div>
-          <h2 className="h2">What our teams said</h2>
+          <h2 className="h2">What you have said</h2>
           <div className="wall">
             {["wc-why", "wc-known", "wc-better"].map((id, i) => (
               <div className="glass wall-col" key={id}>
@@ -255,7 +249,6 @@ function Welcome({ live }: { live: Live }) {
 function TeamsIntro({ live }: { live: Live }) {
   return (
     <div className="pad">
-      <div className="kicker">Five teams · one winner</div>
       <h2 className="h2">Meet the teams</h2>
       <div className="teams-intro">
         {live.teams.map((t, i) => (
@@ -268,11 +261,6 @@ function TeamsIntro({ live }: { live: Live }) {
             </div>
           </div>
         ))}
-      </div>
-      <div className="rules">
-        <span>🧠 Quiz: correct + fast = more points</span>
-        <span>💬 Word clouds: every voice counts</span>
-        <span>🏆 Team challenges: bonus points</span>
       </div>
     </div>
   );
@@ -326,7 +314,6 @@ function CloudScene({ live, scene }: { live: Live; scene: Extract<Scene, { type:
         </div>
         <div className="cloud-count">
           <b>{rs.length}</b>
-          <small>ideas</small>
         </div>
       </div>
       <div className="cloud-box glass">

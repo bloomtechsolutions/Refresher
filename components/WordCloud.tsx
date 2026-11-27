@@ -107,7 +107,7 @@ export default function WordCloud({ responses, teams, scale = 1 }: { responses: 
           {p.w.text}
         </span>
       ))}
-      {words.length === 0 && <div className="cloud-empty">Waiting for the first ideas…</div>}
+      {words.length === 0 && <div className="cloud-empty">Waiting for your feedback…</div>}
     </div>
   );
 }
