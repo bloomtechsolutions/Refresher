@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BML Refresher 2026",
-  description: "Live team activities, quizzes and word clouds for the BML Refresher programme",
+  title: "Central Refresher 2026",
+  description: "Live team activities, quizzes and word clouds for the Central Refresher programme",
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#070b1f" };
 

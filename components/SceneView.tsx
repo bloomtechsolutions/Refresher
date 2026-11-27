@@ -263,7 +263,7 @@ function Welcome({ live }: { live: Live }) {
       <div className="welcome-left">
         <div className="kicker">Bank of Maldives</div>
         <h1 className="hero">
-          BML <span className="grad">Refresher</span>
+          Central <span className="grad">Refresher</span>
           <br />
           2026
         </h1>

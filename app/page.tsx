@@ -6,7 +6,7 @@ export default function Home() {
       <div className="landing">
         <div className="kicker" style={{ fontSize: 14 }}>Bank of Maldives</div>
         <h1>
-          BML <span className="grad">Refresher</span>
+          Central <span className="grad">Refresher</span>
         </h1>
         <p>One app for the whole programme. Team leaders submit, the trainer drives, the big screen comes alive.</p>
         <div className="roles">
