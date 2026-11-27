@@ -21,6 +21,7 @@ export type Scene = Base &
     | { type: "scenario"; kicker: string; title: string; prompt: string; tips: string[] }
     | { type: "splitpay" }
     | { type: "ams" }
+    | { type: "lineup" }
     | { type: "leaderboard" }
     | { type: "thanks" }
   );
@@ -49,6 +50,7 @@ export const SCENES: Scene[] = [
   // ───────── Opening
   { id: "welcome", section: "open", label: "Welcome & join", type: "welcome" },
   { id: "teams", section: "open", label: "Meet the teams", type: "leaderboard" },
+  { id: "lineup", section: "open", label: "Find your team", type: "lineup" },
 
   // ───────── Session 1
   {

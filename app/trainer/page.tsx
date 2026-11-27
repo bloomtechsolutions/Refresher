@@ -6,7 +6,7 @@ import { OPTION_COLORS, SCENES, SECTIONS, Scene, sceneById, Phase } from "@/lib/
 import SceneView, { AMS_LADDER, Stage, splitCalc } from "@/components/SceneView";
 
 const KEY = "bml-refresher-trainer";
-const ICON: Record<string, string> = { welcome: "👋", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", thanks: "🎉" };
+const ICON: Record<string, string> = { welcome: "👋", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
 
 export default function TrainerPage() {
   const [pin, setPin] = useState<string | null>(null);
@@ -532,7 +532,7 @@ function TeamsAdmin({ live, pin }: { live: Live; pin: string }) {
     live.refresh();
   };
   return (
-    <div className="panel" style={{ maxWidth: 900 }}>
+    <div className="panel">
       <h3>Teams, leaders & PINs</h3>
       <p className="dim" style={{ fontSize: 13 }}>
         Default team PINs are 1111, 2222, 3333, 4444, 5555. Set new PINs before the event and hand them to each leader. Leave PIN blank to keep the current one.
@@ -554,6 +554,71 @@ function TeamsAdmin({ live, pin }: { live: Live; pin: string }) {
         );
       })}
       {msg && <p>{msg}</p>}
+      <Members live={live} pin={pin} />
+    </div>
+  );
+}
+
+function Members({ live, pin }: { live: Live; pin: string }) {
+  const [msg, setMsg] = useState("");
+  const balance = async () => {
+    if (live.members.some((m) => m.team_id) && !confirm("Re-shuffle all participants into new balanced teams? Leaders stay with their teams.")) return;
+    const { error } = await supabase.rpc("refresher_balance_teams", { p_pin: pin });
+    setMsg(error ? rpcError(error) : "Teams balanced ✓");
+    live.refresh();
+  };
+  const move = async (name: string, team: number) => {
+    const { error } = await supabase.rpc("refresher_move_member", { p_pin: pin, p_name: name, p_team: team });
+    if (error) setMsg(rpcError(error));
+    live.refresh();
+  };
+  const unassigned = live.members.filter((m) => !m.team_id);
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div className="row" style={{ justifyContent: "space-between" }}>
+        <h3 style={{ margin: 0 }}>Participants ({live.members.length})</h3>
+        <button className="btn gold" onClick={balance}>
+          ⚖️ Auto-balance teams
+        </button>
+      </div>
+      <p className="dim" style={{ fontSize: 13 }}>
+        Balances by gender first, then team size, then mixes branches. Use the dropdown to move someone by hand. {msg}
+      </p>
+      {unassigned.length > 0 && <p style={{ color: "#ffb36b" }}>{unassigned.length} not assigned yet</p>}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12 }}>
+        {live.teams.map((t) => {
+          const ms = live.members.filter((m) => m.team_id === t.id).sort((a, b) => Number(b.is_leader) - Number(a.is_leader) || a.name.localeCompare(b.name));
+          const f = ms.filter((m) => m.gender === "Female").length;
+          return (
+            <div key={t.id} className="panel" style={{ borderTop: `4px solid ${t.color}` }}>
+              <b>
+                {t.emoji} {t.name}
+              </b>
+              <div className="dim" style={{ fontSize: 13, margin: "4px 0 8px" }}>
+                {ms.length} people · ♀ {f} · ♂ {ms.length - f} · ✅ {ms.filter((m) => m.present).length} here
+              </div>
+              {ms.map((m) => (
+                <div key={m.name} className="row" style={{ fontSize: 13, padding: "3px 0" }}>
+                  <span style={{ flex: 1 }}>
+                    {m.present ? "✅ " : ""}
+                    {m.is_leader ? "★ " : ""}
+                    {m.name} <span className="dim">· {m.gender[0]} · {m.unit}</span>
+                  </span>
+                  {!m.is_leader && (
+                    <select className="input" style={{ width: 64, padding: "2px 4px", fontSize: 12 }} value={t.id} onChange={(e) => move(m.name, Number(e.target.value))}>
+                      {live.teams.map((x) => (
+                        <option key={x.id} value={x.id}>
+                          {x.emoji}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

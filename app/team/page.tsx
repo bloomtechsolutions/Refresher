@@ -99,6 +99,11 @@ function TeamApp({ live, team, auth, onLogout }: { live: Live; team: Team; auth:
   const sc = visibleScores(live);
   const rank = sc.findIndex((x) => x.team.id === team.id);
   const [toast, setToast] = useState("");
+  const [tab, setTab] = useState<"live" | "team">("live");
+  const mine = live.members.filter((m) => m.team_id === team.id);
+  const here = mine.filter((m) => m.present).length;
+  // jump back to Live whenever the trainer changes the scene
+  useEffect(() => setTab("live"), [live.state.scene]);
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(""), 2500);
@@ -123,9 +128,23 @@ function TeamApp({ live, team, auth, onLogout }: { live: Live; team: Team; auth:
           <small className="dim"> pts</small>
         </div>
       </div>
-      <div className="t-body" key={scene.id}>
-        <Body live={live} scene={scene} team={team} auth={auth} toast={setToast} />
+      <div className="t-tabs">
+        <button className={tab === "live" ? "on" : ""} onClick={() => setTab("live")}>
+          ⚡ Live
+        </button>
+        <button className={tab === "team" ? "on" : ""} onClick={() => setTab("team")}>
+          👥 My team ({here}/{mine.length})
+        </button>
       </div>
+      {tab === "live" ? (
+        <div className="t-body" key={scene.id}>
+          <Body live={live} scene={scene} team={team} auth={auth} toast={setToast} />
+        </div>
+      ) : (
+        <div className="t-body">
+          <Roster live={live} team={team} auth={auth} toast={setToast} />
+        </div>
+      )}
       <div style={{ textAlign: "center", fontSize: 12 }} className="dim">
         <span className={"dot " + (live.connected ? "on" : "")} style={{ width: 8, height: 8, marginRight: 6 }} />
         {live.connected ? "Live" : "Reconnecting…"}
@@ -156,6 +175,53 @@ function Body({ live, scene, team, auth, toast }: { live: Live; scene: Scene; te
       </div>
       {phase && null}
     </div>
+  );
+}
+
+function Roster({ live, team, auth, toast }: { live: Live; team: Team; auth: Auth; toast: (s: string) => void }) {
+  const ms = live.members
+    .filter((m) => m.team_id === team.id)
+    .sort((a, b) => Number(b.is_leader) - Number(a.is_leader) || a.name.localeCompare(b.name));
+  const f = ms.filter((m) => m.gender === "Female").length;
+  const toggle = async (name: string, present: boolean) => {
+    const { error } = await supabase.rpc("refresher_mark_present", { p_team: auth.team, p_pin: auth.pin, p_name: name, p_present: present });
+    if (error) return toast(rpcError(error));
+    live.refresh();
+  };
+  const initials = (n: string) =>
+    n
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((x) => x[0])
+      .join("");
+  return (
+    <>
+      <div className="t-kicker">Your team · {ms.length} people</div>
+      <div className="t-title">Find your team members</div>
+      <p className="dim" style={{ marginTop: 0, fontSize: 14 }}>
+        Call out the names and tap each person as they join your table. {f} women · {ms.length - f} men.
+      </p>
+      <div className="roster">
+        {ms.map((m) => (
+          <button key={m.name} className={"r-m " + (m.present ? "here" : "")} onClick={() => toggle(m.name, !m.present)}>
+            <span className="r-av">{initials(m.name)}</span>
+            <span>
+              <b>
+                {m.name}
+                {m.is_leader ? " ★" : ""}
+              </b>
+              <small>
+                {m.is_leader ? "Team leader · " : ""}
+                {m.job} · {m.unit}
+              </small>
+            </span>
+            <span className="r-chk">{m.present ? "✅" : "⬜"}</span>
+          </button>
+        ))}
+        {ms.length === 0 && <p className="dim">The trainer hasn’t assigned members yet.</p>}
+      </div>
+    </>
   );
 }
 

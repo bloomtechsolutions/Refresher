@@ -7,6 +7,7 @@ export type Team = { id: number; name: string; leader: string; color: string; em
 export type State = { scene: string; phase: Phase; opened_at: string | null; data: Record<string, any>; updated_at: string };
 export type Resp = { id: number; activity: string; team_id: number; value: string; created_at: string };
 export type Answer = { activity: string; team_id: number; choice: number; elapsed_ms: number; answered_at: string };
+export type Member = { name: string; gender: string; job: string; unit: string; is_leader: boolean; team_id: number | null; present: boolean };
 export type Bonus = { id: number; team_id: number; points: number; reason: string; created_at: string };
 
 export type Live = {
@@ -17,6 +18,7 @@ export type Live = {
   responses: Resp[];
   answers: Answer[];
   bonus: Bonus[];
+  members: Member[];
   offset: number; // serverNow - localNow (ms)
   refresh: () => void;
 };
@@ -29,6 +31,7 @@ export function useLive(): Live {
   const [responses, setResponses] = useState<Resp[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [bonus, setBonus] = useState<Bonus[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [ready, setReady] = useState(false);
   const [connected, setConnected] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -51,6 +54,10 @@ export function useLive(): Live {
       answers: async () => {
         const { data } = await supabase.from("refresher_answers").select("*").limit(5000);
         if (data) setAnswers(data as Answer[]);
+      },
+      members: async () => {
+        const { data } = await supabase.from("refresher_members").select("name,gender,job,unit,is_leader,team_id,present").order("name");
+        if (data) setMembers(data as Member[]);
       },
       bonus: async () => {
         const { data } = await supabase.from("refresher_bonus").select("*").order("id");
@@ -91,6 +98,7 @@ export function useLive(): Live {
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_answers" }, () => reload("answers"))
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_bonus" }, () => reload("bonus"))
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_teams" }, () => reload("teams"))
+      .on("postgres_changes", { event: "*", schema: "public", table: "refresher_members" }, () => reload("members"))
       .subscribe((status) => setConnected(status === "SUBSCRIBED"));
 
     // safety net polling in case a websocket drops on venue Wi-Fi
@@ -99,6 +107,7 @@ export function useLive(): Live {
       loaders.answers();
       loaders.responses();
       loaders.bonus();
+      loaders.members();
     }, 6000);
 
     return () => {
@@ -108,7 +117,7 @@ export function useLive(): Live {
     };
   }, [loaders]);
 
-  return { ready, connected, teams, state, responses, answers, bonus, offset, refresh };
+  return { ready, connected, teams, state, responses, answers, bonus, members, offset, refresh };
 }
 
 // ───────── scoring

@@ -72,6 +72,8 @@ function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
       return <Welcome live={live} />;
     case "leaderboard":
       return scene.id === "teams" ? <TeamsIntro live={live} /> : <Leaderboard live={live} />;
+    case "lineup":
+      return <Lineup live={live} />;
     case "title":
       return (
         <div className="title-scene">
@@ -261,6 +263,39 @@ function TeamsIntro({ live }: { live: Live }) {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────── Line-up
+function Lineup({ live }: { live: Live }) {
+  return (
+    <div className="pad" style={{ paddingTop: 50 }}>
+      <h2 className="h2" style={{ fontSize: 64, margin: "0 0 6px" }}>Find your team</h2>
+      <div className="lineup">
+        {live.teams.map((t, i) => {
+          const ms = live.members
+            .filter((m) => m.team_id === t.id)
+            .sort((a, b) => Number(b.is_leader) - Number(a.is_leader) || a.name.localeCompare(b.name));
+          return (
+            <div key={t.id} className="lu-col" style={{ ["--c" as any]: t.color, animationDelay: `${i * 0.12}s` }}>
+              <div className="lu-head">
+                <span>{t.emoji}</span>
+                {t.name.replace(/^Team /, "")}
+              </div>
+              {ms.map((m) => (
+                <div key={m.name} className={"lu-m " + (m.is_leader ? "lead-m" : "")}>
+                  <b>
+                    {m.is_leader && "★ "}
+                    {m.name}
+                  </b>
+                  <small>{m.is_leader ? "Team leader" : m.unit}</small>
+                </div>
+              ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

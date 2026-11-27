@@ -399,3 +399,26 @@ a { color: inherit; }
   .tr-side { max-height: 40vh; }
   .tr-grid { grid-template-columns: 1fr; }
 }
+
+/* ───────────── Line-up */
+.lineup { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 18px; }
+.lu-col { border-radius: 28px; padding: 18px 16px 16px; background: linear-gradient(180deg, color-mix(in srgb, var(--c) 30%, transparent), rgba(255,255,255,.03)); border: 2px solid color-mix(in srgb, var(--c) 70%, transparent); animation: rise .7s both; }
+.lu-head { font-family: var(--display); font-weight: 800; font-size: 34px; display: flex; align-items: center; gap: 10px; margin: 0 6px 10px; white-space: nowrap; }
+.lu-head span { font-size: 44px; }
+.lu-m { padding: 6px 12px; border-radius: 12px; background: rgba(0,0,0,.22); margin-bottom: 6px; }
+.lu-m b { display: block; font-size: 21px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lu-m small { color: var(--dim); font-size: 15px; }
+.lu-m.lead-m { background: color-mix(in srgb, var(--c) 45%, rgba(0,0,0,.2)); }
+.lu-m.lead-m b { font-weight: 800; }
+.lu-m.lead-m small { color: #fff; opacity: .8; text-transform: uppercase; letter-spacing: .12em; font-size: 14px; }
+/* team app tabs + roster */
+.t-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; padding: 4px; border-radius: 14px; background: rgba(255,255,255,.06); }
+.t-tabs button { border: 0; padding: 10px; border-radius: 10px; background: none; font-weight: 700; cursor: pointer; color: var(--dim); }
+.t-tabs button.on { background: var(--c); color: #fff; }
+.roster { display: flex; flex-direction: column; gap: 8px; }
+.r-m { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid var(--line); cursor: pointer; text-align: left; width: 100%; }
+.r-m.here { border-color: #22c55e; background: rgba(34,197,94,.12); }
+.r-av { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: color-mix(in srgb, var(--c) 60%, #000); }
+.r-m b { display: block; }
+.r-m small { color: var(--dim); font-size: 13px; }
+.r-chk { margin-left: auto; font-size: 22px; }
