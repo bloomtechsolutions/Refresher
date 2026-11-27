@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <main className="app">
       <div className="landing">
-        <div className="kicker" style={{ fontSize: 14 }}>Bank of Maldives · Retail & SME Banking</div>
+        <div className="kicker" style={{ fontSize: 14 }}>Bank of Maldives</div>
         <h1>
           BML <span className="grad">Refresher</span>
         </h1>

@@ -221,7 +221,7 @@ function Attendance({ live }: { live: Live }) {
   return (
     <div className="welcome attend">
       <div className="welcome-left">
-        <div className="kicker">Bank of Maldives · Retail & SME Banking</div>
+        <div className="kicker">Bank of Maldives</div>
         <h1 className="hero" style={{ fontSize: 150 }}>
           Mark your
           <br />
@@ -261,7 +261,7 @@ function Welcome({ live }: { live: Live }) {
   return (
     <div className="welcome">
       <div className="welcome-left">
-        <div className="kicker">Bank of Maldives · Retail & SME Banking</div>
+        <div className="kicker">Bank of Maldives</div>
         <h1 className="hero">
           BML <span className="grad">Refresher</span>
           <br />
