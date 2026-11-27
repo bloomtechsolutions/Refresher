@@ -85,7 +85,7 @@ export const SCENES: Scene[] = [
   // ───────── Part 1
   {
     id: "p1-title", section: "p1", label: "Part 1 title", type: "title",
-    kicker: "Part 1", number: "01", title: "Commercial updates", subtitle: "Developments implemented or announced, Sep – Nov 2026", presenter: "Shaig",
+    kicker: "Part 1", number: "01", title: "Commercial updates", subtitle: "Developments implemented or announced, Sep – Nov 2026",
   },
   {
     id: "p1-now", section: "p1", label: "Now available", type: "cards",
