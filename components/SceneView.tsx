@@ -222,6 +222,9 @@ function Attendance({ live }: { live: Live }) {
     <div className="welcome attend">
       <div className="welcome-left">
         <div className="kicker">Bank of Maldives</div>
+        <div className="att-welcome">
+          Welcome to <span className="grad">Central Refresher 2026</span>
+        </div>
         <h1 className="hero" style={{ fontSize: 150 }}>
           Mark your
           <br />
@@ -235,7 +238,7 @@ function Attendance({ live }: { live: Live }) {
             <b>2</b> Scan the QR code
           </div>
           <div>
-            <b>3</b> Submit the attendance form
+            <b>3</b> Submit your attendance
           </div>
         </div>
       </div>

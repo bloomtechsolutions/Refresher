@@ -77,7 +77,7 @@ export const SCENES: Scene[] = [
   // ───────── Session 3
   {
     id: "s3-title", section: "s3", label: "Session title", type: "title",
-    kicker: "Day 1 · Session 3 · 60 minutes", number: "03",
+    kicker: "Day 1 · Session 3", number: "03",
     title: "Commercial Updates",
     subtitle: "What changed, what’s new, and how to talk about it with customers",
   },
@@ -85,7 +85,7 @@ export const SCENES: Scene[] = [
   // ───────── Part 1
   {
     id: "p1-title", section: "p1", label: "Part 1 title", type: "title",
-    kicker: "Part 1 · 15 minutes", number: "01", title: "Commercial updates", subtitle: "Developments implemented or announced, Sep – Nov 2026", presenter: "Shaig",
+    kicker: "Part 1", number: "01", title: "Commercial updates", subtitle: "Developments implemented or announced, Sep – Nov 2026", presenter: "Shaig",
   },
   {
     id: "p1-now", section: "p1", label: "Now available", type: "cards",
@@ -129,7 +129,7 @@ export const SCENES: Scene[] = [
   },
 
   // ───────── Part 2 AMS
-  { id: "p2-title", section: "p2", label: "Part 2 title", type: "title", kicker: "Part 2 · 12 minutes", number: "02", title: "Advance Merchant Settlement", subtitle: "Working capital sized on card settlements, repaid from daily settlements", presenter: "Mahuza" },
+  { id: "p2-title", section: "p2", label: "Part 2 title", type: "title", kicker: "Part 2", number: "02", title: "Advance Merchant Settlement", subtitle: "Working capital sized on card settlements, repaid from daily settlements", presenter: "Mahuza" },
   { id: "p2-slides", section: "p2", label: "AMS deck", type: "slides", kicker: "Advance Merchant Settlement", title: "AMS", images: slides([12, 13, 14, 15, 16, 17, 18]) },
   { id: "p2-facts", section: "p2", label: "AMS in numbers", type: "facts", kicker: "Advance Merchant Settlement", title: "AMS in four numbers", facts: [
       { value: "MVR 2M", label: "Maximum facility", sub: "needs 24 months of history" },
@@ -141,12 +141,12 @@ export const SCENES: Scene[] = [
   { id: "p2-case", section: "p2", label: "Scenario · Café owner", type: "scenario", kicker: "Team challenge · AMS", title: "The café owner", prompt: "A café has accepted BML cards for 14 months with about MVR 35,000 in monthly card sales. The owner needs MVR 900,000 to renovate but has no audited financials. What do you tell them?", tips: ["Are they eligible?", "How much could they get?", "How do they apply and repay?"] },
 
   // ───────── Part 3 SplitPay
-  { id: "p3-title", section: "p3", label: "Part 3 title", type: "title", kicker: "Part 3 · 14 minutes", number: "03", title: "BML SplitPay", subtitle: "Buy now. Pay over time. Fixed monthly instalments at the POS.", presenter: "Zima" },
+  { id: "p3-title", section: "p3", label: "Part 3 title", type: "title", kicker: "Part 3", number: "03", title: "BML SplitPay", subtitle: "Buy now. Pay over time. Fixed monthly instalments at the POS.", presenter: "Zima" },
   { id: "p3-slides", section: "p3", label: "SplitPay deck", type: "slides", kicker: "BML SplitPay", title: "SplitPay", images: slides([21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]) },
   { id: "p3-calc", section: "p3", label: "Live SplitPay calculator", type: "splitpay" },
 
   // ───────── Part 4 Payment Solutions
-  { id: "p4-title", section: "p4", label: "Part 4 title", type: "title", kicker: "Part 4 · 12 minutes", number: "04", title: "Payment Solutions", subtitle: "Acceptance products, Merchant Portal & mPOS, Virtual Terminal and DCC", presenter: "Umran" },
+  { id: "p4-title", section: "p4", label: "Part 4 title", type: "title", kicker: "Part 4", number: "04", title: "Payment Solutions", subtitle: "Acceptance products, Merchant Portal & mPOS, Virtual Terminal and DCC", presenter: "Umran" },
   { id: "p4-slides", section: "p4", label: "Payments deck", type: "slides", kicker: "Payment Solutions", title: "Payment Solutions", images: slides([35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]) },
   { id: "p4-facts", section: "p4", label: "Payments in numbers", type: "facts", kicker: "Merchant services", title: "Numbers to remember", facts: [
       { value: "13+", label: "Payment methods", sub: "cards & digital wallets" },
