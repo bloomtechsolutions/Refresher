@@ -16,6 +16,7 @@ export type Scene = Base &
     | { type: "cards"; kicker: string; title: string; subtitle?: string; cards: { icon: string; title: string; body: string; tag?: string }[] }
     | { type: "steps"; kicker: string; title: string; subtitle?: string; steps: { title: string; body: string }[]; note?: string }
     | { type: "countdown"; kicker: string; title: string; target: string; targetLabel: string; schemes: string[]; note: string; extra?: { title: string; body: string } }
+    | { type: "table"; kicker: string; title: string; subtitle?: string; banner?: string; intro?: string[]; columns: string[]; rows: string[][]; note?: string; compact?: boolean }
     | { type: "facts"; kicker: string; title: string; facts: { value: string; label: string; sub?: string }[]; note?: string }
     | { type: "slides"; kicker: string; title: string; images: string[] }
     | { type: "quiz"; kicker: string; question: string; options: string[]; answer: number; explain: string; limit: number; points: number }
@@ -146,10 +147,66 @@ export const SCENES: Scene[] = [
   {
     id: "p1-housing", section: "p1", label: "Help to Buy & Build", type: "countdown",
     kicker: "Important information", title: "Help to Buy & Help to Build",
-    target: "2026-11-29T11:00:00+05:00", targetLabel: "Applications open 11:00 AM · Sunday 29 November 2026",
+    target: "2026-11-29T11:00:00+05:00", targetLabel: "Sunday 29 November 2026 · 11:00 AM",
     schemes: ["Help to Buy Scheme", "Help to Build Scheme"],
-    note: "Gazetted under the National Home Ownership Programme. Expect more enquiries at Service Centres, the Lounge and the Contact Centre. Use approved guidance only.",
-    extra: { title: "Changes to Guesthouse & Liveaboard", body: "Updated requirements for guesthouse and liveaboard customers. Presenter walks through the details." },
+    note: "Gazetted under the National Home Ownership Programme. Expect more enquiries at Service Centres, the Lounge and the Contact Centre. Give accurate, consistent information.",
+  },
+  {
+    id: "p1-htb", section: "p1", label: "Help to Buy scheme", type: "table",
+    kicker: "National Home Ownership Programme", title: "1. Help to Buy Scheme",
+    subtitle: "A Government grant of MVR 250,000 for eligible first-time homebuyers, in two categories",
+    columns: ["Category", "Help to Buy – Affordable", "Help to Buy – Market Rate"],
+    rows: [
+      ["Government grant", "**MVR 250,000**", "**MVR 250,000**"],
+      ["Geographical coverage", "Outside Greater Malé Region", "Nationwide"],
+      ["Purpose", "Purchase of eligible affordable housing units", "Purchase of commercially available housing units"],
+    ],
+  },
+  {
+    id: "p1-htbuild", section: "p1", label: "Help to Build scheme", type: "table",
+    kicker: "National Home Ownership Programme", title: "2. Help to Build Scheme",
+    subtitle: "Financial assistance for eligible landowners to:",
+    intro: ["🏗️ Construct a new residential property", "🧱 Complete unfinished residential construction", "🔨 Reconstruct deteriorated residential properties"],
+    columns: ["Location", "Government assistance"],
+    rows: [
+      ["Outside Greater Malé Region", "**MVR 200,000** per eligible plot"],
+      ["Malé, excluding Hulhumalé and Villimalé", "**MVR 200,000** per eligible applicant, up to **MVR 1 million** per plot"],
+    ],
+  },
+  {
+    id: "p1-hprocess", section: "p1", label: "Housing: application process", type: "steps",
+    kicker: "Help to Buy & Help to Build", title: "Customer application process",
+    subtitle: "The same five steps apply to both schemes",
+    steps: [
+      { title: "Apply to the Ministry", body: "Customer applies through the Ministry’s online portal." },
+      { title: "Ministry assessment", body: "Documents and eligibility verified. About two weeks." },
+      { title: "Conditional offer", body: "Approved applicants get a conditional offer and are told to apply for bank financing." },
+      { title: "Bank financing", body: "The Bank assesses the application against its policies, repayment capacity and credit requirements." },
+      { title: "Disbursement", body: "Once conditions and agreements are met, the grant is released through an escrow account with the bank." },
+    ],
+  },
+  {
+    id: "p1-gh-terms", section: "p1", label: "Guesthouse & Liveaboard: terms", type: "table", compact: true,
+    kicker: "Guest House & Liveaboard", title: "Proposed amendments",
+    columns: ["Feature", "Guest House", "Liveaboard"],
+    rows: [
+      ["Equity", "30% → **20%** of project cost", "30% → **25%** of project cost"],
+      ["Equity verification", "Completed work valued, net of outstanding project liabilities. Where documents are missing, sweat equity or materials are valued by branch officials or professional valuers."],
+      ["Safeguards", "• **Above MVR 10 million:** third-party certificate or audited accounts\n• **Companies:** shareholder loans accepted as equity\n• **Monitoring:** balance tracked via BML project account; PAC report after 12 months"],
+      ["Tenure", "180 → **240** months, including 24 months grace period", "84 → **144** months, grace period 12 → **24** months"],
+    ],
+    note: "Lower equity, proportionate verification and longer tenures ease customer costs.",
+  },
+  {
+    id: "p1-gh-pricing", section: "p1", label: "Guesthouse & Liveaboard: pricing", type: "table", compact: true,
+    kicker: "Guest House & Liveaboard", title: "Proposed pricing",
+    banner: "The Bank’s high USD borrowing costs limit the scope for further interest rate reductions on USD facilities.",
+    columns: ["Product", "Existing rate", "50% in MVR & 50% in USD", "Lending in MVR, repayment in USD"],
+    rows: [
+      ["Guest House", "New guesthouses: 12% p.a. (Base Rate + 2%)\nExisting guesthouses: 11% p.a. (Base Rate + 1%)", "**9% p.a.**\nFacility created and repaid in USD", "**7% p.a.**\nBase Rate − 3"],
+      ["Liveaboard", "12.75% p.a. (Base Rate + 2.75%)", "**10% p.a.**\nFacility created and repaid in USD", "**8% p.a.**\nBase Rate − 2"],
+    ],
+    note: "The existing rate stays unchanged for facilities disbursed and repaid in MVR.",
   },
 
   // ───────── Part 2 AMS

@@ -154,7 +154,7 @@ function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
           <div className="kicker">{scene.kicker}</div>
           <h2 className="h2">{scene.title}</h2>
           {scene.subtitle && <p className="sub">{scene.subtitle}</p>}
-          <div className="steps">
+          <div className={"steps n" + scene.steps.length} style={{ gridTemplateColumns: `repeat(${scene.steps.length}, 1fr)` }}>
             {scene.steps.map((s, i) => (
               <div className="step" key={s.title} style={{ animationDelay: `${0.2 + i * 0.25}s` }}>
                 <div className="step-n">{i + 1}</div>
@@ -169,6 +169,8 @@ function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
       );
     case "countdown":
       return <CountdownScene live={live} scene={scene} />;
+    case "table":
+      return <TableScene scene={scene} />;
     case "facts":
       return (
         <div className="pad">
@@ -468,55 +470,85 @@ function Agenda() {
 }
 
 // ───────────────────────── Countdown
-function CountdownScene({ live, scene }: { live: Live; scene: Extract<Scene, { type: "countdown" }> }) {
-  const now = useNow(live.offset, 1000);
-  const diff = Math.max(0, new Date(scene.target).getTime() - now);
-  const d = Math.floor(diff / 86400000);
-  const h = Math.floor((diff % 86400000) / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-  const s = Math.floor((diff % 60000) / 1000);
-  const pad = (n: number) => String(n).padStart(2, "0");
+function CountdownScene({ scene }: { live: Live; scene: Extract<Scene, { type: "countdown" }> }) {
   return (
     <div className="pad">
       <div className="kicker">{scene.kicker}</div>
       <h2 className="h2">{scene.title}</h2>
-      <div className="cd-wrap">
-        <div className="glass cd">
-          <div className="cd-label">{diff > 0 ? "Applications open in" : "Applications are OPEN"}</div>
-          <div className="cd-digits">
-            {[
-              [d, "days"],
-              [h, "hours"],
-              [m, "min"],
-              [s, "sec"],
-            ].map(([v, l]) => (
-              <div key={l as string} className="cd-cell">
-                <b>{pad(v as number)}</b>
-                <small>{l}</small>
-              </div>
-            ))}
-          </div>
-          <div className="cd-target">{scene.targetLabel}</div>
-          <div className="cd-schemes">
-            {scene.schemes.map((x) => (
-              <span key={x}>🏠 {x}</span>
-            ))}
-          </div>
+      <div className="glass cd" style={{ marginTop: 40 }}>
+        <div className="cd-label">Applications open</div>
+        <div className="cd-date">
+          {scene.targetLabel.split(" · ").map((x) => (
+            <div key={x}>{x}</div>
+          ))}
         </div>
-        <div className="cd-side">
-          <div className="glass card shown">
-            <div className="card-icon">📣</div>
-            <p>{scene.note}</p>
-          </div>
-          {scene.extra && (
-            <div className="glass card shown">
-              <div className="card-icon">⛵</div>
-              <h3>{scene.extra.title}</h3>
-              <p>{scene.extra.body}</p>
-            </div>
-          )}
+        <div className="cd-schemes">
+          {scene.schemes.map((x) => (
+            <span key={x}>🏠 {x}</span>
+          ))}
         </div>
       </div>
+      <div className="note">📣 {scene.note}</div>
+    </div>
+  );
+}
+
+// Inline **bold**, line breaks (\n) and "• " bullet lines inside table cells
+function Rich({ text }: { text: string }) {
+  return (
+    <>
+      {text.split("\n").map((line, k) => (
+        <div key={k} className={line.startsWith("• ") ? "rb" : undefined}>
+          {(line.startsWith("• ") ? line.slice(2) : line).split(/(\*\*[^*]+\*\*)/).map((part, n) =>
+            part.startsWith("**") ? <b key={n}>{part.slice(2, -2)}</b> : <span key={n}>{part}</span>
+          )}
+        </div>
+      ))}
+    </>
+  );
+}
+
+function TableScene({ scene }: { scene: Extract<Scene, { type: "table" }> }) {
+  const n = scene.columns.length;
+  return (
+    <div className={"pad tbl-scene" + (scene.compact ? " compact" : "")}>
+      <div className="kicker">{scene.kicker}</div>
+      <h2 className="h2">{scene.title}</h2>
+      {scene.subtitle && <p className="sub">{scene.subtitle}</p>}
+      {scene.intro && (
+        <div className="tbl-intro">
+          {scene.intro.map((x, i) => (
+            <span key={x} style={{ animationDelay: `${i * 0.1}s` }}>
+              {x}
+            </span>
+          ))}
+        </div>
+      )}
+      {scene.banner && <div className="tbl-banner">{scene.banner}</div>}
+      <table className="stbl">
+        <thead>
+          <tr>
+            {scene.columns.map((c) => (
+              <th key={c}>{c}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {scene.rows.map((r, i) => (
+            <tr key={i} style={{ animationDelay: `${0.15 + i * 0.12}s` }}>
+              {r.map((c, k) => {
+                const Tag = k === 0 ? "th" : "td";
+                return (
+                  <Tag key={k} colSpan={k === r.length - 1 ? n - r.length + 1 : 1}>
+                    <Rich text={c} />
+                  </Tag>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {scene.note && <div className="note">💡 {scene.note}</div>}
     </div>
   );
 }
