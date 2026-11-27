@@ -95,7 +95,31 @@ export const SCENES: Scene[] = [
       { icon: "📱", title: "Contact & email update", body: "Customers update their contact details and email address themselves in the Lounge app.", tag: "Lounge app" },
       { icon: "🏪", title: "Business Portal: Merchant Applications", body: "Merchant applications are now submitted through the Business Portal.", tag: "Business Portal" },
       { icon: "📄", title: "Online statements", body: "Statements for up to 5 years can be generated from Internet Banking.", tag: "Internet Banking" },
+      { icon: "✅", title: "Automatic loan closure", body: "Fully settled loan and financing facilities close automatically when paid in full via Internet Banking.", tag: "Internet Banking" },
+      { icon: "💰", title: "FD & Investment Accounts online", body: "Customers apply for Fixed Deposit and Investment Accounts online, anytime, with instant processing.", tag: "Mobile app" },
     ],
+  },
+  {
+    id: "p1-loanclose", section: "p1", label: "Automatic loan closure", type: "facts",
+    kicker: "Live now", title: "Loan & financing closure is now automated",
+    facts: [
+      { value: "1,000+", label: "Facilities closed", sub: "automatically in just 2 weeks" },
+      { value: "~333", label: "Hours saved", sub: "in the first 2 weeks" },
+      { value: "0", label: "Closure requests", sub: "needed once fully settled" },
+      { value: "MVR 1M", label: "Payoff limit", sub: "above this, not automatic" },
+    ],
+    note: "Internet Banking shows the current-day payoff amount, overpayment isn’t allowed, and the facility disappears from Internet Banking after COB.",
+  },
+  {
+    id: "p1-fd", section: "p1", label: "FD & Investment online", type: "steps",
+    kicker: "Live now", title: "Fixed Deposit & Investment Accounts are online",
+    subtitle: "Customers apply from the mobile app: Applications → Fixed Deposit and Investments",
+    steps: [
+      { title: "Apply anytime", body: "From anywhere, with no branch visit." },
+      { title: "Instant processing", body: "Choose automatic renewal options." },
+      { title: "Updates in the app", body: "Customers receive updates directly through the mobile app." },
+    ],
+    note: "Queries? Contact the Retail Products and Projects Team.",
   },
   {
     id: "p1-ongoing", section: "p1", label: "Ongoing projects", type: "cards",
