@@ -171,6 +171,39 @@ function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
       return <CountdownScene live={live} scene={scene} />;
     case "table":
       return <TableScene scene={scene} />;
+    case "compare":
+      return (
+        <div className="pad">
+          <div className="kicker">{scene.kicker}</div>
+          <h2 className="h2">{scene.title}</h2>
+          <div className="cmp">
+            {scene.cols.map((c, ci) => (
+              <div key={c.name} className="glass cmp-col" style={{ animationDelay: `${ci * 0.15}s` }}>
+                <div className="cmp-head">
+                  <span>{c.icon}</span>
+                  {c.name}
+                </div>
+                {c.items.map((it, k) => (
+                  <div key={it.label} className="cmp-row" style={{ animationDelay: `${0.25 + ci * 0.15 + k * 0.1}s` }}>
+                    <div className="cmp-label">{it.label}</div>
+                    <div className="cmp-vals">
+                      {it.from && (
+                        <>
+                          <s>{it.from}</s>
+                          <i>→</i>
+                        </>
+                      )}
+                      <b>{it.to}</b>
+                      {it.unit && <small>{it.unit}</small>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          {scene.note && <div className="note">💡 {scene.note}</div>}
+        </div>
+      );
     case "facts":
       return (
         <div className="pad">

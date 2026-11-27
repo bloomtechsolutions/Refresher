@@ -475,3 +475,16 @@ a { color: inherit; }
 .steps.n5 .step-line { top: 55px; }
 .steps.n5 h3 { font-size: 34px; }
 .steps.n5 p { font-size: 25px; margin: 0 4px; }
+
+/* ───────────── Compare (before → after) */
+.cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; margin-top: 30px; }
+.cmp-col { padding: 36px 44px; animation: pop .7s both; }
+.cmp-head { font-family: var(--display); font-weight: 900; font-size: 52px; display: flex; align-items: center; gap: 18px; margin-bottom: 18px; }
+.cmp-head span { font-size: 60px; }
+.cmp-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 0; border-top: 1px solid var(--line); animation: rise .5s both; }
+.cmp-label { font-size: 32px; font-weight: 600; color: #c9cff0; }
+.cmp-vals { display: flex; align-items: baseline; gap: 16px; font-family: var(--display); white-space: nowrap; }
+.cmp-vals s { font-size: 38px; color: var(--dim); font-weight: 700; text-decoration-thickness: 3px; }
+.cmp-vals i { font-style: normal; font-size: 36px; color: var(--dim); }
+.cmp-vals b { font-size: 76px; font-weight: 900; color: var(--gold); line-height: 1; }
+.cmp-vals small { font-size: 24px; color: var(--dim); font-family: var(--body); }

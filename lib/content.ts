@@ -17,6 +17,7 @@ export type Scene = Base &
     | { type: "steps"; kicker: string; title: string; subtitle?: string; steps: { title: string; body: string }[]; note?: string }
     | { type: "countdown"; kicker: string; title: string; target: string; targetLabel: string; schemes: string[]; note: string; extra?: { title: string; body: string } }
     | { type: "table"; kicker: string; title: string; subtitle?: string; banner?: string; intro?: string[]; columns: string[]; rows: string[][]; note?: string; compact?: boolean }
+    | { type: "compare"; kicker: string; title: string; cols: { icon: string; name: string; items: { label: string; from: string; to: string; unit?: string }[] }[]; note?: string }
     | { type: "facts"; kicker: string; title: string; facts: { value: string; label: string; sub?: string }[]; note?: string }
     | { type: "slides"; kicker: string; title: string; images: string[] }
     | { type: "quiz"; kicker: string; question: string; options: string[]; answer: number; explain: string; limit: number; points: number }
@@ -186,27 +187,36 @@ export const SCENES: Scene[] = [
     ],
   },
   {
-    id: "p1-gh-terms", section: "p1", label: "Guesthouse & Liveaboard: terms", type: "table", compact: true,
-    kicker: "Guest House & Liveaboard", title: "Proposed amendments",
-    columns: ["Feature", "Guest House", "Liveaboard"],
-    rows: [
-      ["Equity", "30% → **20%** of project cost", "30% → **25%** of project cost"],
-      ["Equity verification", "Completed work valued, net of outstanding project liabilities. Where documents are missing, sweat equity or materials are valued by branch officials or professional valuers."],
-      ["Safeguards", "• **Above MVR 10 million:** third-party certificate or audited accounts\n• **Companies:** shareholder loans accepted as equity\n• **Monitoring:** balance tracked via BML project account; PAC report after 12 months"],
-      ["Tenure", "180 → **240** months, including 24 months grace period", "84 → **144** months, grace period 12 → **24** months"],
+    id: "p1-gh-terms", section: "p1", label: "Guesthouse & Liveaboard: terms", type: "compare",
+    kicker: "Guest House & Liveaboard · proposed", title: "Lower equity, longer tenure",
+    cols: [
+      { icon: "🏠", name: "Guest House", items: [
+        { label: "Equity", from: "30%", to: "20%" },
+        { label: "Tenure", from: "180", to: "240", unit: "months" },
+        { label: "Grace period", from: "", to: "24", unit: "months" },
+      ] },
+      { icon: "⛵", name: "Liveaboard", items: [
+        { label: "Equity", from: "30%", to: "25%" },
+        { label: "Tenure", from: "84", to: "144", unit: "months" },
+        { label: "Grace period", from: "12", to: "24", unit: "months" },
+      ] },
     ],
-    note: "Lower equity, proportionate verification and longer tenures ease customer costs.",
+    note: "Equity is easier to prove: completed work and sweat equity count. Above MVR 10 million needs a third-party certificate or audited accounts.",
   },
   {
-    id: "p1-gh-pricing", section: "p1", label: "Guesthouse & Liveaboard: pricing", type: "table", compact: true,
-    kicker: "Guest House & Liveaboard", title: "Proposed pricing",
-    banner: "The Bank’s high USD borrowing costs limit the scope for further interest rate reductions on USD facilities.",
-    columns: ["Product", "Existing rate", "50% in MVR & 50% in USD", "Lending in MVR, repayment in USD"],
-    rows: [
-      ["Guest House", "New guesthouses: 12% p.a. (Base Rate + 2%)\nExisting guesthouses: 11% p.a. (Base Rate + 1%)", "**9% p.a.**\nFacility created and repaid in USD", "**7% p.a.**\nBase Rate − 3"],
-      ["Liveaboard", "12.75% p.a. (Base Rate + 2.75%)", "**10% p.a.**\nFacility created and repaid in USD", "**8% p.a.**\nBase Rate − 2"],
+    id: "p1-gh-pricing", section: "p1", label: "Guesthouse & Liveaboard: pricing", type: "compare",
+    kicker: "Guest House & Liveaboard · proposed", title: "Lower rates for USD repayment",
+    cols: [
+      { icon: "🏠", name: "Guest House", items: [
+        { label: "Borrow & repay in USD", from: "11–12%", to: "9%", unit: "p.a." },
+        { label: "Borrow in MVR, repay in USD", from: "11–12%", to: "7%", unit: "p.a." },
+      ] },
+      { icon: "⛵", name: "Liveaboard", items: [
+        { label: "Borrow & repay in USD", from: "12.75%", to: "10%", unit: "p.a." },
+        { label: "Borrow in MVR, repay in USD", from: "12.75%", to: "8%", unit: "p.a." },
+      ] },
     ],
-    note: "The existing rate stays unchanged for facilities disbursed and repaid in MVR.",
+    note: "Facilities disbursed and repaid in MVR keep their existing rate.",
   },
 
   // ───────── Part 2 AMS
