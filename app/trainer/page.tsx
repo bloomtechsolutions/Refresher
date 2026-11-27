@@ -604,7 +604,7 @@ function Members({ live, pin }: { live: Live; pin: string }) {
         </button>
       </div>
       <p className="dim" style={{ fontSize: 13 }}>
-        Balances by gender first, then team size, then mixes branches. Use the dropdown to move someone by hand. {msg}
+        Spreads each branch across as many teams as possible while keeping 9 per team and genders balanced (tries 150 shuffles, keeps the best). Use the dropdown to move someone by hand. {msg}
       </p>
       {unassigned.length > 0 && <p style={{ color: "#ffb36b" }}>{unassigned.length} not assigned yet</p>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12 }}>
