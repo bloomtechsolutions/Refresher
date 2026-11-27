@@ -81,7 +81,6 @@ export const SCENES: Scene[] = [
     title: "Commercial Updates",
     subtitle: "What changed, what’s new, and how to talk about it with customers",
   },
-  { id: "s3-agenda", section: "s3", label: "How the hour runs", type: "agenda" },
 
   // ───────── Part 1
   {
