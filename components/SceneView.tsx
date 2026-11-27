@@ -71,9 +71,9 @@ function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
     case "welcome":
       return <Welcome live={live} />;
     case "leaderboard":
-      return scene.id === "teams" ? <TeamsIntro live={live} /> : <Leaderboard live={live} />;
+      return scene.id === "teams" ? <Lineup live={live} title="Meet the teams" /> : <Leaderboard live={live} />;
     case "lineup":
-      return <Lineup live={live} />;
+      return <Spotlight live={live} />;
     case "title":
       return (
         <div className="title-scene">
@@ -248,31 +248,11 @@ function Welcome({ live }: { live: Live }) {
   );
 }
 
-function TeamsIntro({ live }: { live: Live }) {
-  return (
-    <div className="pad">
-      <h2 className="h2">Meet the teams</h2>
-      <div className="teams-intro">
-        {live.teams.map((t, i) => (
-          <div key={t.id} className="team-card" style={{ ["--c" as any]: t.color, animationDelay: `${i * 0.15}s` }}>
-            <div className="team-em">{t.emoji}</div>
-            <div className="team-name">{t.name}</div>
-            <div className="team-leader">
-              <small>Team leader</small>
-              {t.leader || "—"}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ───────────────────────── Line-up
-function Lineup({ live }: { live: Live }) {
+function Lineup({ live, title = "Find your team" }: { live: Live; title?: string }) {
   return (
     <div className="pad" style={{ paddingTop: 50 }}>
-      <h2 className="h2" style={{ fontSize: 64, margin: "0 0 6px" }}>Find your team</h2>
+      <h2 className="h2" style={{ fontSize: 64, margin: "0 0 6px" }}>{title}</h2>
       <div className="lineup">
         {live.teams.map((t, i) => {
           const ms = live.members
@@ -296,6 +276,51 @@ function Lineup({ live }: { live: Live }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────── Spotlight: one team at a time, big enough for the back row
+function Spotlight({ live }: { live: Live }) {
+  const now = useNow(live.offset, 1000);
+  const active = live.state.scene === "lineup";
+  const pick = active ? Number(live.state.data.focus || 0) : 0;
+  const n = Math.max(1, live.teams.length);
+  const t = pick ? live.teams.find((x) => x.id === pick) : live.teams[Math.floor(now / 8000) % n];
+  if (!t) return null;
+  const ms = live.members
+    .filter((m) => m.team_id === t.id)
+    .sort((a, b) => Number(b.is_leader) - Number(a.is_leader) || a.name.localeCompare(b.name));
+  const leader = ms.find((m) => m.is_leader);
+  const rest = ms.filter((m) => !m.is_leader);
+  return (
+    <div className="spot" style={{ ["--c" as any]: t.color }}>
+      <div className="spot-left" key={"l" + t.id}>
+        <div className="kicker">Find your team</div>
+        <div className="spot-em">{t.emoji}</div>
+        <div className="spot-name">{t.name}</div>
+        {leader && (
+          <div className="spot-leader">
+            <small>★ Team leader</small>
+            {leader.name}
+          </div>
+        )}
+      </div>
+      <div className="spot-list" key={"r" + t.id}>
+        {rest.map((m, i) => (
+          <div key={m.name} className="spot-m" style={{ animationDelay: `${0.1 + i * 0.06}s` }}>
+            <b>{m.name}</b>
+            <small>{m.unit}</small>
+          </div>
+        ))}
+      </div>
+      <div className="spot-dots">
+        {live.teams.map((x) => (
+          <span key={x.id} className={x.id === t.id ? "on" : ""} style={{ ["--c" as any]: x.color }}>
+            {x.emoji} {x.name.replace(/^Team /, "")}
+          </span>
+        ))}
       </div>
     </div>
   );

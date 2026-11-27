@@ -422,3 +422,18 @@ a { color: inherit; }
 .r-m b { display: block; }
 .r-m small { color: var(--dim); font-size: 13px; }
 .r-chk { margin-left: auto; font-size: 22px; }
+
+/* ───────────── Spotlight */
+.spot { position: absolute; inset: 0; display: grid; grid-template-columns: 640px 1fr; gap: 60px; padding: 70px 100px 130px; background: radial-gradient(900px 700px at 15% 50%, color-mix(in srgb, var(--c) 40%, transparent), transparent 70%); transition: background 1s; }
+.spot-left { display: flex; flex-direction: column; justify-content: center; animation: rise .7s both; }
+.spot-em { font-size: 220px; line-height: 1.1; margin-top: 20px; filter: drop-shadow(0 20px 50px rgba(0,0,0,.4)); }
+.spot-name { font-family: var(--display); font-weight: 900; font-size: 120px; line-height: 1; letter-spacing: -.03em; color: var(--c); text-shadow: 0 0 60px color-mix(in srgb, var(--c) 50%, transparent); }
+.spot-leader { margin-top: 36px; padding: 22px 30px; border-radius: 26px; background: var(--c); font-family: var(--display); font-weight: 800; font-size: 46px; align-self: flex-start; box-shadow: 0 20px 60px color-mix(in srgb, var(--c) 50%, transparent); }
+.spot-leader small { display: block; font-size: 20px; letter-spacing: .2em; text-transform: uppercase; opacity: .85; }
+.spot-list { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-content: center; }
+.spot-m { padding: 22px 28px; border-radius: 22px; background: rgba(255,255,255,.07); border: 1px solid var(--line); border-left: 8px solid var(--c); animation: rise .5s both; }
+.spot-m b { display: block; font-size: 40px; font-weight: 700; line-height: 1.15; }
+.spot-m small { color: var(--dim); font-size: 24px; }
+.spot-dots { position: absolute; left: 100px; right: 100px; bottom: 30px; display: flex; gap: 14px; justify-content: center; }
+.spot-dots span { padding: 10px 22px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line); color: var(--dim); font-weight: 700; transition: all .4s; }
+.spot-dots span.on { background: var(--c); border-color: var(--c); color: #fff; transform: scale(1.1); }

@@ -50,7 +50,7 @@ export const SCENES: Scene[] = [
   // ───────── Opening
   { id: "welcome", section: "open", label: "Welcome & join", type: "welcome" },
   { id: "teams", section: "open", label: "Meet the teams", type: "leaderboard" },
-  { id: "lineup", section: "open", label: "Find your team", type: "lineup" },
+  { id: "lineup", section: "open", label: "Find your team (spotlight)", type: "lineup" },
 
   // ───────── Session 1
   {

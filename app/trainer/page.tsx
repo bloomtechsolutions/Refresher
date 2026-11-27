@@ -446,6 +446,28 @@ function Controls({ live, scene, pin, patch, phaseTo }: { live: Live; scene: Sce
     );
   }
 
+  if (scene.type === "lineup") {
+    const f = Number(d.focus || 0);
+    return (
+      <div className="panel">
+        <h3>Find your team · spotlight</h3>
+        <div className="ctrl">
+          <button className={"btn sm " + (!f ? "primary" : "")} onClick={() => patch({ focus: 0 })}>
+            🔄 Auto-rotate (8s)
+          </button>
+          {live.teams.map((t) => (
+            <button key={t.id} className={"btn sm " + (f === t.id ? "primary" : "")} onClick={() => patch({ focus: t.id })}>
+              {t.emoji} {t.name.replace(/^Team /, "")}
+            </button>
+          ))}
+        </div>
+        <p className="dim" style={{ fontSize: 13 }}>
+          Shows one team at a time in large text. “Meet the teams” (previous scene) shows all five teams together.
+        </p>
+      </div>
+    );
+  }
+
   if (scene.type === "ams") {
     const hi = typeof d.highlight === "number" ? d.highlight : -1;
     return (
