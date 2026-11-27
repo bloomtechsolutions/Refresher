@@ -1,9 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
-
-const display = Outfit({ subsets: ["latin"], weight: ["400", "600", "700", "800", "900"], variable: "--font-display" });
-const body = Inter({ subsets: ["latin"], variable: "--font-body" });
 
 export const metadata: Metadata = {
   title: "BML Refresher 2026",
@@ -13,7 +9,13 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+      </head>
       <body>{children}</body>
     </html>
   );

@@ -8,8 +8,8 @@
   --red: #e4002b;
   --gold: #ffd166;
   --teal: #00d1c1;
-  --display: var(--font-display), "Outfit", system-ui, sans-serif;
-  --body: var(--font-body), "Inter", system-ui, sans-serif;
+  --display: "Outfit", system-ui, sans-serif;
+  --body: "Inter", system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: var(--body); -webkit-font-smoothing: antialiased; }
