@@ -556,3 +556,5 @@ a { color: inherit; }
 .fs-card.st-todo { opacity: .65; }
 .fs-card-n { font-family: var(--display); font-weight: 800; font-size: 18px; line-height: 1.15; overflow-wrap: anywhere; }
 .fs-card-m { color: var(--dim); font-size: 13px; margin-top: 2px; }
+.ft-search { display: flex; gap: 6px; align-items: center; margin: 10px 0 2px; }
+.ft-search .input { padding: 12px 14px; }

@@ -195,6 +195,7 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
   const [me, setMe] = useState<[number, number] | null>(null);
   const [sel, setSel] = useState<number | null>(null);
   const [filter, setFilter] = useState<"near" | "todo" | "mine" | "all">("near");
+  const [q, setQ] = useState("");
   const [adding, setAdding] = useState<{ lat: number; lon: number } | null>(null);
   const [newName, setNewName] = useState("");
   const [newCat, setNewCat] = useState(CATEGORIES[0]);
@@ -229,12 +230,14 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
     const ref = me || MAAMIGILI_CENTER;
     // businesses found online have no exact position yet: list them after the located ones
     let ls = live.leads.map((l) => ({ l, d: l.osm_id?.startsWith("web/") ? 1e9 : distanceM(ref, [l.lat, l.lon]) }));
+    const term = q.trim().toLowerCase();
+    if (term) ls = ls.filter((x) => `${x.l.name} ${x.l.category} ${x.l.notes} ${x.l.contact}`.toLowerCase().includes(term));
     if (filter === "todo") ls = ls.filter((x) => x.l.status === "todo");
     if (filter === "mine") ls = ls.filter((x) => x.l.team_id === team.id);
     if (filter === "all") ls.sort((a, b) => a.l.name.localeCompare(b.l.name));
     else ls.sort((a, b) => a.d - b.d);
-    return filter === "near" ? ls.slice(0, 25) : ls;
-  }, [live.leads, me, filter, team.id]);
+    return filter === "near" && !term ? ls.slice(0, 25) : ls;
+  }, [live.leads, me, filter, team.id, q]);
 
   const save = async (status: LeadStatus) => {
     if (!lead) return;
@@ -367,6 +370,14 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
         </div>
       )}
 
+      <div className="ft-search">
+        <input className="input" type="text" enterKeyHint="search" placeholder="🔍 Search businesses (name, type, street, phone)" value={q} onChange={(e) => setQ(e.target.value)} />
+        {q && (
+          <button className="btn sm" onClick={() => setQ("")}>
+            ✕
+          </button>
+        )}
+      </div>
       <div className="ft-bar">
         {(
           [
@@ -398,6 +409,11 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
             </button>
           );
         })}
+        {q.trim() && list.length === 0 && (
+          <p className="dim">
+            No business matches “{q.trim()}”. Not on the list? Tap ➕ Add business here while you’re at the shop.
+          </p>
+        )}
         {live.leads.length === 0 && <p className="dim">No businesses loaded yet. The trainer can import them, or tap “Add business here” as you find them.</p>}
       </div>
     </>
