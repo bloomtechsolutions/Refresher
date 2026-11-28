@@ -4,6 +4,10 @@ import { AGENDA, OPTION_COLORS, OPTION_SHAPES, SCENES, Scene, TAKEAWAYS, WORD_PR
 import { Live, quizPoints, useNow, visibleScores } from "@/lib/live";
 import WordCloud from "./WordCloud";
 import Qr from "./Qr";
+import dynamic from "next/dynamic";
+import { STATUS, fieldStats, FIELD_MINUTES } from "@/lib/field";
+import { BRANDED_POINTS } from "@/lib/live";
+const FieldMap = dynamic(() => import("./FieldMap"), { ssr: false });
 
 // A fixed 1920×1080 stage scaled to fit its container: the projector and the
 // trainer preview render exactly the same picture.
@@ -52,7 +56,7 @@ export default function SceneView({ live, sceneId }: { live: Live; sceneId?: str
 
 function Footer({ live, scene }: { live: Live; scene: Scene }) {
   const sc = visibleScores(live);
-  if (scene.type === "welcome" || scene.type === "slides" || scene.type === "attendance") return null;
+  if (scene.type === "welcome" || scene.type === "slides" || scene.type === "attendance" || scene.type === "fieldmap") return null;
   return (
     <div className="footer">
       <div className="ticker">
@@ -74,6 +78,10 @@ function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
       return <Welcome live={live} />;
     case "leaderboard":
       return scene.id === "teams" ? <Lineup live={live} title="Meet the teams" /> : <Leaderboard live={live} />;
+    case "fieldbrief":
+      return <FieldBrief live={live} />;
+    case "fieldmap":
+      return <FieldScreen live={live} />;
     case "lineup":
       return <Spotlight live={live} />;
     case "title":
@@ -322,6 +330,130 @@ function Welcome({ live }: { live: Live }) {
         {url && <Qr text={url} size={340} />}
         <div className="join-url">{url.replace(/^https?:\/\//, "")}</div>
         <div className="join-s">Pick your team · enter your team PIN</div>
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────── Field activity
+function useFieldClock(live: Live) {
+  const now = useNow(live.offset, 1000);
+  const end = live.settings.field_end ? new Date(live.settings.field_end).getTime() : 0;
+  const left = end ? Math.max(0, end - now) : 0;
+  const h = Math.floor(left / 3600000);
+  const m = Math.floor((left % 3600000) / 60000);
+  const sec = Math.floor((left % 60000) / 1000);
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  return { running: !!end && left > 0, over: !!end && left === 0, text: end ? `${h}:${p2(m)}:${p2(sec)}` : `${FIELD_MINUTES / 60}:00:00`, frac: end ? left / (FIELD_MINUTES * 60000) : 1 };
+}
+
+function FieldBrief({ live }: { live: Live }) {
+  const clock = useFieldClock(live);
+  return (
+    <div className="pad fbrief">
+      <div className="kicker">Field activity · Adh. Maamigili</div>
+      <h1 className="mega" style={{ fontSize: 110 }}>
+        Bring BML branding <span className="grad">to every door</span>
+      </h1>
+      <div className="fb-grid">
+        <div className="fb-steps">
+          {[
+            ["🗺️", "Open the Field tab", "Your phone shows the island map and every business"],
+            ["🚶", "Visit & pitch", "Shops, guesthouses, cafés and other businesses"],
+            ["✅", "Update the status", "Branding updated, visited, follow-up or declined"],
+            ["➕", "Found a new one?", "Tap “Add business here” to put it on the map"],
+          ].map(([i, t, d], k) => (
+            <div key={t} style={{ animationDelay: `${k * 0.12}s` }}>
+              <span>{i}</span>
+              <b>{t}</b>
+              <small>{d}</small>
+            </div>
+          ))}
+        </div>
+        <div className="glass fb-clock">
+          <small>{clock.running ? "Time left" : clock.over ? "Time’s up" : "Mission time"}</small>
+          <b>{clock.text}</b>
+          <div className="fb-pts">
+            ✅ Every business with BML branding = <em>+{BRANDED_POINTS} pts</em>
+          </div>
+          <div className="dim" style={{ fontSize: 24 }}>
+            {live.leads.length} businesses on the map so far
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FieldScreen({ live }: { live: Live }) {
+  const clock = useFieldClock(live);
+  const total = live.leads.length;
+  const branded = live.leads.filter((l) => l.status === "branded").length;
+  const touched = live.leads.filter((l) => l.status !== "todo").length;
+  const rows = live.teams
+    .map((t) => ({ t, ...fieldStats(live.leads, t.id) }))
+    .sort((a, b) => b.branded - a.branded || b.visited - a.visited);
+  const maxB = Math.max(1, ...rows.map((r) => r.branded));
+  const recent = [...live.leads].filter((l) => l.status !== "todo").sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 4);
+  return (
+    <div className="fscreen">
+      <div className="fs-map">
+        <FieldMap leads={live.leads} teams={live.teams} big />
+        <div className="fs-legend">
+          {(["branded", "visited", "followup", "declined", "todo"] as const).map((k) => (
+            <span key={k}>
+              <i style={{ background: STATUS[k].color }} /> {STATUS[k].label}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="fs-side">
+        <div className="kicker">Live · Adh. Maamigili</div>
+        <div className={"fs-clock " + (clock.over ? "over" : "")}>
+          <small>{clock.over ? "Time’s up, come back!" : "Time left"}</small>
+          <b>{clock.text}</b>
+          <div className="fs-bar">
+            <i style={{ width: `${clock.frac * 100}%` }} />
+          </div>
+        </div>
+        <div className="fs-total">
+          <b>{branded}</b>
+          <span>
+            branded
+            <br />
+            <small>
+              {touched} visited · {total} on map
+            </small>
+          </span>
+        </div>
+        <div className="fs-teams">
+          {rows.map((r, i) => (
+            <div key={r.t.id} className="fs-team" style={{ ["--c" as any]: r.t.color }}>
+              <span className="fs-rank">{i + 1}</span>
+              <span className="fs-em">{r.t.emoji}</span>
+              <div className="fs-tn">
+                {r.t.name.replace(/^Team /, "")}
+                <div className="fs-tbar">
+                  <i style={{ width: `${(r.branded / maxB) * 100}%` }} />
+                </div>
+              </div>
+              <div className="fs-tv">
+                <b>{r.branded}</b>
+                <small>{r.visited} visited</small>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="fs-feed">
+          {recent.map((l) => {
+            const t = live.teams.find((x) => x.id === l.team_id);
+            return (
+              <div key={l.id}>
+                {STATUS[l.status].icon} <b>{l.name}</b> <span className="dim">· {t?.name.replace(/^Team /, "")}</span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

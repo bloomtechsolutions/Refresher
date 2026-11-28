@@ -1,5 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { CATEGORIES, MAAMIGILI_CENTER, STATUS, distanceM, fieldStats } from "@/lib/field";
+import type { LeadStatus } from "@/lib/live";
+const FieldMap = dynamic(() => import("@/components/FieldMap"), { ssr: false });
 import { supabase } from "@/lib/supabase";
 import { Live, Team, quizPoints, rpcError, useLive, useNow, visibleScores } from "@/lib/live";
 import { OPTION_COLORS, OPTION_SHAPES, Scene, sceneById } from "@/lib/content";
@@ -99,11 +103,12 @@ function TeamApp({ live, team, auth, onLogout }: { live: Live; team: Team; auth:
   const sc = visibleScores(live);
   const rank = sc.findIndex((x) => x.team.id === team.id);
   const [toast, setToast] = useState("");
-  const [tab, setTab] = useState<"live" | "team">("live");
+  const [tab, setTab] = useState<"live" | "team" | "field">("live");
   const mine = live.members.filter((m) => m.team_id === team.id);
   const here = mine.filter((m) => m.present).length;
   // jump back to Live whenever the trainer changes the scene
-  useEffect(() => setTab("live"), [live.state.scene]);
+  useEffect(() => setTab(live.state.scene === "field-brief" || live.state.scene === "field-map" ? "field" : "live"), [live.state.scene]);
+  const fieldOn = live.leads.length > 0 || live.state.scene.startsWith("field");
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(""), 2500);
@@ -128,15 +133,24 @@ function TeamApp({ live, team, auth, onLogout }: { live: Live; team: Team; auth:
           <small className="dim"> pts</small>
         </div>
       </div>
-      <div className="t-tabs">
+      <div className="t-tabs" style={{ gridTemplateColumns: fieldOn ? "1fr 1fr 1fr" : "1fr 1fr" }}>
         <button className={tab === "live" ? "on" : ""} onClick={() => setTab("live")}>
           ⚡ Live
         </button>
         <button className={tab === "team" ? "on" : ""} onClick={() => setTab("team")}>
-          👥 My team ({here}/{mine.length})
+          👥 Team ({here}/{mine.length})
         </button>
+        {fieldOn && (
+          <button className={tab === "field" ? "on" : ""} onClick={() => setTab("field")}>
+            🗺️ Field
+          </button>
+        )}
       </div>
-      {tab === "live" ? (
+      {tab === "field" ? (
+        <div className="t-body">
+          <FieldTab live={live} team={team} auth={auth} toast={setToast} />
+        </div>
+      ) : tab === "live" ? (
         <div className="t-body" key={scene.id}>
           <Body live={live} scene={scene} team={team} auth={auth} toast={setToast} />
         </div>
@@ -175,6 +189,215 @@ function Body({ live, scene, team, auth, toast }: { live: Live; scene: Scene; te
       </div>
       {phase && null}
     </div>
+  );
+}
+
+function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: Auth; toast: (s: string) => void }) {
+  const now = useNow(live.offset, 1000);
+  const [me, setMe] = useState<[number, number] | null>(null);
+  const [sel, setSel] = useState<number | null>(null);
+  const [filter, setFilter] = useState<"near" | "todo" | "mine" | "all">("near");
+  const [sat, setSat] = useState(false);
+  const [adding, setAdding] = useState<{ lat: number; lon: number } | null>(null);
+  const [newName, setNewName] = useState("");
+  const [newCat, setNewCat] = useState(CATEGORIES[0]);
+  const [contact, setContact] = useState("");
+  const [notes, setNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  // follow GPS while the tab is open
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const id = navigator.geolocation.watchPosition(
+      (p) => setMe([p.coords.latitude, p.coords.longitude]),
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 10000 }
+    );
+    return () => navigator.geolocation.clearWatch(id);
+  }, []);
+
+  const lead = live.leads.find((l) => l.id === sel) || null;
+  useEffect(() => {
+    setContact(lead?.contact || "");
+    setNotes(lead?.notes || "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sel]);
+
+  const end = live.settings.field_end ? new Date(live.settings.field_end).getTime() : 0;
+  const left = end ? Math.max(0, end - now) : 0;
+  const clock = end ? `${Math.floor(left / 3600000)}:${String(Math.floor((left % 3600000) / 60000)).padStart(2, "0")}:${String(Math.floor((left % 60000) / 1000)).padStart(2, "0")}` : "Not started";
+  const stats = fieldStats(live.leads, team.id);
+
+  const list = useMemo(() => {
+    const ref = me || MAAMIGILI_CENTER;
+    let ls = live.leads.map((l) => ({ l, d: distanceM(ref, [l.lat, l.lon]) }));
+    if (filter === "todo") ls = ls.filter((x) => x.l.status === "todo");
+    if (filter === "mine") ls = ls.filter((x) => x.l.team_id === team.id);
+    if (filter === "all") ls.sort((a, b) => a.l.name.localeCompare(b.l.name));
+    else ls.sort((a, b) => a.d - b.d);
+    return filter === "near" ? ls.slice(0, 25) : ls;
+  }, [live.leads, me, filter, team.id]);
+
+  const save = async (status: LeadStatus) => {
+    if (!lead) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("refresher_lead_update", { p_team: auth.team, p_pin: auth.pin, p_id: lead.id, p_status: status, p_contact: contact, p_notes: notes });
+    setBusy(false);
+    if (error) return toast(rpcError(error));
+    toast(status === "branded" ? "🎉 Branding updated!" : "Saved ✓");
+    if (navigator.vibrate) navigator.vibrate(60);
+    live.refresh();
+  };
+  const add = async () => {
+    if (!adding || !newName.trim()) return;
+    setBusy(true);
+    const { data, error } = await supabase.rpc("refresher_lead_add", { p_team: auth.team, p_pin: auth.pin, p_name: newName.trim(), p_category: newCat, p_lat: adding.lat, p_lon: adding.lon });
+    setBusy(false);
+    if (error) return toast(rpcError(error));
+    toast("Business added ✓");
+    setAdding(null);
+    setNewName("");
+    live.refresh();
+    if (data) setSel(Number(data));
+  };
+  const owner = lead?.team_id ? live.teams.find((t) => t.id === lead.team_id) : null;
+  const locked = !!lead?.team_id && lead.team_id !== team.id;
+
+  return (
+    <>
+      <div className="ft-clock">
+        <span>⏱ {left === 0 && end ? "Time’s up, head back!" : "Time left"}</span>
+        <b>{clock}</b>
+      </div>
+      <div className="row" style={{ gap: 6, marginBottom: 10, fontSize: 13 }}>
+        <span className="chip">✅ {stats.branded} branded (+{stats.branded * 50} pts)</span>
+        <span className="chip">👋 {stats.visited} visited</span>
+      </div>
+      <div className="ft-map">
+        <FieldMap
+          leads={live.leads}
+          teams={live.teams}
+          selected={sel}
+          onSelect={(id) => {
+            setSel(id);
+            setAdding(null);
+          }}
+          me={me}
+          satellite={sat}
+          draft={adding ? [adding.lat, adding.lon] : null}
+          onMapClick={(lat, lon) => adding && setAdding({ lat, lon })}
+        />
+      </div>
+      <div className="ft-bar">
+        <button onClick={() => setSat(!sat)}>{sat ? "🗺️ Map" : "🛰️ Satellite"}</button>
+        <button
+          className={adding ? "on" : ""}
+          onClick={() => {
+            setSel(null);
+            setAdding(adding ? null : { lat: (me || MAAMIGILI_CENTER)[0], lon: (me || MAAMIGILI_CENTER)[1] });
+          }}
+        >
+          ➕ Add business here
+        </button>
+      </div>
+
+      {adding && (
+        <div className="ft-sheet">
+          <b>New business</b>
+          <p className="dim" style={{ fontSize: 12, margin: "4px 0 8px" }}>
+            Placed at {me ? "your GPS location" : "the island centre"}. Tap the map to move it.
+          </p>
+          <input className="input" placeholder="Business name" value={newName} onChange={(e) => setNewName(e.target.value)} />
+          <select className="input" style={{ marginTop: 8 }} value={newCat} onChange={(e) => setNewCat(e.target.value)}>
+            {CATEGORIES.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </select>
+          <button className="btn primary" style={{ width: "100%", marginTop: 8 }} disabled={busy || !newName.trim()} onClick={add}>
+            Add to map
+          </button>
+        </div>
+      )}
+
+      {lead && (
+        <div className="ft-sheet">
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <div>
+              <b style={{ fontSize: 18 }}>{lead.name}</b>
+              <div className="dim" style={{ fontSize: 12 }}>
+                {lead.category}
+                {me ? ` · ${Math.round(distanceM(me, [lead.lat, lead.lon]))} m away` : ""}
+                {owner ? ` · ${owner.emoji} ${owner.name}` : ""}
+              </div>
+            </div>
+            <a className="btn sm" href={`https://www.google.com/maps/dir/?api=1&destination=${lead.lat},${lead.lon}&travelmode=walking`} target="_blank" rel="noreferrer">
+              🧭 Go
+            </a>
+          </div>
+          {locked ? (
+            <p style={{ color: "#ffb36b" }}>
+              {owner?.emoji} {owner?.name} is handling this business ({STATUS[lead.status].label}).
+            </p>
+          ) : (
+            <>
+              <div className="ft-st">
+                {(["branded", "visited", "followup", "declined"] as LeadStatus[]).map((k) => (
+                  <button key={k} disabled={busy} className={lead.status === k ? "on" : ""} style={{ ["--sc" as any]: STATUS[k].color }} onClick={() => save(k)}>
+                    {STATUS[k].icon} {STATUS[k].label}
+                  </button>
+                ))}
+              </div>
+              <input className="input" placeholder="Contact person / phone (optional)" value={contact} onChange={(e) => setContact(e.target.value)} />
+              <textarea className="input" style={{ marginTop: 6 }} rows={2} placeholder="Notes: what they said, what they need" value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <div className="row" style={{ marginTop: 6 }}>
+                <button className="btn sm" disabled={busy} onClick={() => save(lead.status)}>
+                  Save notes
+                </button>
+                {lead.status !== "todo" && !lead.added_by && (
+                  <button className="btn sm" disabled={busy} onClick={() => save("todo")}>
+                    Undo / release
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      <div className="ft-bar">
+        {(
+          [
+            ["near", "📍 Nearest"],
+            ["todo", "⚪ Not visited"],
+            ["mine", "⭐ Ours"],
+            ["all", "A–Z"],
+          ] as const
+        ).map(([k, label]) => (
+          <button key={k} className={filter === k ? "on" : ""} onClick={() => setFilter(k)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="ft-list">
+        {list.map(({ l, d }) => {
+          const t = live.teams.find((x) => x.id === l.team_id);
+          return (
+            <button key={l.id} className={"ft-item " + (sel === l.id ? "sel" : "")} onClick={() => (setSel(l.id), setAdding(null), window.scrollTo({ top: 0, behavior: "smooth" }))}>
+              <span className="ft-dot" style={{ background: STATUS[l.status].color, borderColor: t?.color || "transparent" }} />
+              <span style={{ flex: 1 }}>
+                <b>{l.name}</b>
+                <small>
+                  {l.category} · {STATUS[l.status].label}
+                  {t ? ` · ${t.emoji}` : ""}
+                </small>
+              </span>
+              <small className="dim">{d < 1000 ? `${Math.round(d)} m` : `${(d / 1000).toFixed(1)} km`}</small>
+            </button>
+          );
+        })}
+        {live.leads.length === 0 && <p className="dim">No businesses loaded yet. The trainer can import them, or tap “Add business here” as you find them.</p>}
+      </div>
+    </>
   );
 }
 

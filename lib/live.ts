@@ -8,6 +8,8 @@ export type State = { scene: string; phase: Phase; opened_at: string | null; dat
 export type Resp = { id: number; activity: string; team_id: number; value: string; created_at: string };
 export type Answer = { activity: string; team_id: number; choice: number; elapsed_ms: number; answered_at: string };
 export type Member = { name: string; gender: string; job: string; unit: string; is_leader: boolean; team_id: number | null; present: boolean };
+export type Lead = { id: number; name: string; category: string; lat: number; lon: number; osm_id: string | null; team_id: number | null; status: LeadStatus; contact: string; notes: string; added_by: number | null; updated_at: string };
+export type LeadStatus = "todo" | "visited" | "branded" | "declined" | "followup";
 export type Bonus = { id: number; team_id: number; points: number; reason: string; created_at: string };
 
 export type Live = {
@@ -20,6 +22,7 @@ export type Live = {
   bonus: Bonus[];
   members: Member[];
   settings: Record<string, string>;
+  leads: Lead[];
   offset: number; // serverNow - localNow (ms)
   refresh: () => void;
 };
@@ -34,6 +37,7 @@ export function useLive(): Live {
   const [bonus, setBonus] = useState<Bonus[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [ready, setReady] = useState(false);
   const [connected, setConnected] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -56,6 +60,10 @@ export function useLive(): Live {
       answers: async () => {
         const { data } = await supabase.from("refresher_answers").select("*").limit(5000);
         if (data) setAnswers(data as Answer[]);
+      },
+      leads: async () => {
+        const { data } = await supabase.from("refresher_leads").select("*").order("name").limit(2000);
+        if (data) setLeads(data as Lead[]);
       },
       settings: async () => {
         const { data } = await supabase.from("refresher_settings").select("key,value");
@@ -106,6 +114,7 @@ export function useLive(): Live {
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_teams" }, () => reload("teams"))
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_members" }, () => reload("members"))
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_settings" }, () => reload("settings"))
+      .on("postgres_changes", { event: "*", schema: "public", table: "refresher_leads" }, () => reload("leads"))
       .subscribe((status) => setConnected(status === "SUBSCRIBED"));
 
     // safety net polling in case a websocket drops on venue Wi-Fi
@@ -116,6 +125,7 @@ export function useLive(): Live {
       loaders.bonus();
       loaders.members();
       loaders.settings();
+      loaders.leads();
     }, 6000);
 
     return () => {
@@ -125,7 +135,7 @@ export function useLive(): Live {
     };
   }, [loaders]);
 
-  return { ready, connected, teams, state, responses, answers, bonus, members, settings, offset, refresh };
+  return { ready, connected, teams, state, responses, answers, bonus, members, settings, leads, offset, refresh };
 }
 
 // ───────── scoring
@@ -138,7 +148,9 @@ export function quizPoints(sceneId: string, a: Answer | undefined): number {
   return Math.round(s.points * (0.6 + 0.4 * speed));
 }
 
-export function scores(live: Pick<Live, "teams" | "answers" | "bonus">, revealedOnly?: Set<string>) {
+export const BRANDED_POINTS = 50;
+
+export function scores(live: Pick<Live, "teams" | "answers" | "bonus"> & { leads?: Lead[] }, revealedOnly?: Set<string>) {
   const map = new Map<number, number>();
   live.teams.forEach((t) => map.set(t.id, 0));
   live.answers.forEach((a) => {
@@ -146,6 +158,10 @@ export function scores(live: Pick<Live, "teams" | "answers" | "bonus">, revealed
     map.set(a.team_id, (map.get(a.team_id) || 0) + quizPoints(a.activity, a));
   });
   live.bonus.forEach((b) => map.set(b.team_id, (map.get(b.team_id) || 0) + b.points));
+  // field activity: every business that took BML branding earns points automatically
+  (live.leads || []).forEach((l) => {
+    if (l.status === "branded" && l.team_id) map.set(l.team_id, (map.get(l.team_id) || 0) + BRANDED_POINTS);
+  });
   return live.teams
     .map((t) => ({ team: t, score: map.get(t.id) || 0 }))
     .sort((a, b) => b.score - a.score || a.team.id - b.team.id);
@@ -178,6 +194,7 @@ export function rpcError(e: any): string {
   if (m.includes("bad pin")) return "Wrong PIN";
   if (m.includes("not open")) return "This activity isn’t open right now";
   if (m.includes("time up")) return "Time’s up!";
+  if (m.includes("taken")) return "Another team is already handling this business";
   if (m.includes("limit")) return "Your team has reached the limit for this question";
   return m;
 }

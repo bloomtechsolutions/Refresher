@@ -4,9 +4,11 @@ import { supabase } from "@/lib/supabase";
 import { Live, quizPoints, rpcError, useLive, useNow, visibleScores } from "@/lib/live";
 import { OPTION_COLORS, SCENES, SECTIONS, Scene, sceneById, Phase } from "@/lib/content";
 import SceneView, { AMS_LADDER, Stage, splitCalc } from "@/components/SceneView";
+import { FIELD_MINUTES, STATUS, STATUS_ORDER, downloadText, fetchOsmBusinesses, leadsCsv } from "@/lib/field";
+import type { LeadStatus } from "@/lib/live";
 
 const KEY = "bml-refresher-trainer";
-const ICON: Record<string, string> = { welcome: "👋", attendance: "📝", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
+const ICON: Record<string, string> = { welcome: "👋", fieldbrief: "🎯", fieldmap: "🗺️", attendance: "📝", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
 
 export default function TrainerPage() {
   const [pin, setPin] = useState<string | null>(null);
@@ -447,6 +449,7 @@ function Controls({ live, scene, pin, patch, phaseTo }: { live: Live; scene: Sce
   }
 
   if (scene.type === "attendance") return <AttendanceCtrl live={live} pin={pin} />;
+  if (scene.type === "fieldbrief" || scene.type === "fieldmap") return <FieldCtrl live={live} pin={pin} />;
 
   if (scene.type === "lineup") {
     const f = Number(d.focus || 0);
@@ -495,6 +498,110 @@ function Controls({ live, scene, pin, patch, phaseTo }: { live: Live; scene: Sce
       <p className="dim" style={{ margin: 0 }}>
         Nothing to control here. Team leaders see “Eyes on the screen” and the live leaderboard. Press Next → when ready.
       </p>
+    </div>
+  );
+}
+
+function FieldCtrl({ live, pin }: { live: Live; pin: string }) {
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [q, setQ] = useState("");
+  const end = live.settings.field_end ? new Date(live.settings.field_end) : null;
+  const setEnd = async (d: Date | null) => {
+    const { error } = await supabase.rpc("refresher_set_setting", { p_pin: pin, p_key: "field_end", p_value: d ? d.toISOString() : "" });
+    setMsg(error ? rpcError(error) : d ? `Timer ends at ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Timer cleared");
+    live.refresh();
+  };
+  const serverNow = () => new Date(Date.now() + live.offset);
+  const importOsm = async () => {
+    setBusy(true);
+    setMsg("Loading businesses from OpenStreetMap…");
+    try {
+      const rows = await fetchOsmBusinesses();
+      const { data, error } = await supabase.rpc("refresher_lead_import", { p_pin: pin, p_rows: rows });
+      if (error) throw error;
+      setMsg(`Found ${rows.length} named businesses on OpenStreetMap · ${data} new added to the map.`);
+      live.refresh();
+    } catch (e: any) {
+      setMsg("Couldn’t reach OpenStreetMap (" + (e?.message || e) + "). Teams can still add businesses in the field.");
+    }
+    setBusy(false);
+  };
+  const admin = async (id: number, team: number | null, status: string | null, del = false) => {
+    if (del && !confirm("Remove this business from the map?")) return;
+    const { error } = await supabase.rpc("refresher_lead_admin", { p_pin: pin, p_id: id, p_team: team, p_status: status, p_delete: del });
+    if (error) setMsg(rpcError(error));
+    live.refresh();
+  };
+  const leads = live.leads.filter((l) => !q || l.name.toLowerCase().includes(q.toLowerCase())).sort((a, b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) || a.name.localeCompare(b.name));
+  const counts = STATUS_ORDER.map((k) => [k, live.leads.filter((l) => l.status === k).length] as const);
+  return (
+    <div className="panel">
+      <h3>Field activity · Maamigili</h3>
+      <div className="ctrl">
+        <button className="btn go" onClick={() => setEnd(new Date(serverNow().getTime() + FIELD_MINUTES * 60000))}>
+          ▶ Start {FIELD_MINUTES / 60}-hour timer
+        </button>
+        <button className="btn sm" disabled={!end} onClick={() => end && setEnd(new Date(end.getTime() + 15 * 60000))}>
+          +15 min
+        </button>
+        <button className="btn sm" disabled={!end} onClick={() => setEnd(serverNow())}>
+          ■ End now
+        </button>
+        <button className="btn sm" disabled={!end} onClick={() => setEnd(null)}>
+          Reset
+        </button>
+      </div>
+      <div className="ctrl" style={{ marginTop: 8 }}>
+        <button className="btn gold" disabled={busy} onClick={importOsm}>
+          📥 Import businesses from OpenStreetMap
+        </button>
+        <button className="btn sm" disabled={!live.leads.length} onClick={() => downloadText(`maamigili-leads-${new Date().toISOString().slice(0, 10)}.csv`, leadsCsv(live.leads, live.teams))}>
+          ⬇ Export CSV
+        </button>
+      </div>
+      {msg && <p className="dim" style={{ fontSize: 13 }}>{msg}</p>}
+      <div className="row" style={{ flexWrap: "wrap", gap: 6, fontSize: 13, margin: "8px 0" }}>
+        {counts.map(([k, n]) => (
+          <span key={k} className="chip">
+            {STATUS[k].icon} {n} {STATUS[k].label}
+          </span>
+        ))}
+      </div>
+      <input className="input" placeholder="Search businesses" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="feed" style={{ marginTop: 8, maxHeight: 360 }}>
+        {leads.map((l) => {
+          const t = live.teams.find((x) => x.id === l.team_id);
+          return (
+            <div key={l.id} className="feed-i" style={{ ["--c" as any]: t?.color || "#555", flexWrap: "wrap" }}>
+              <span style={{ flex: 1, minWidth: 140 }}>
+                {STATUS[l.status].icon} <b>{l.name}</b>
+                <span className="dim"> · {l.category}</span>
+                {(l.contact || l.notes) && <div className="dim" style={{ fontSize: 12 }}>{[l.contact, l.notes].filter(Boolean).join(" · ")}</div>}
+              </span>
+              <select className="input" style={{ width: 70, padding: "2px 4px", fontSize: 12 }} value={l.team_id ?? ""} onChange={(e) => admin(l.id, e.target.value ? Number(e.target.value) : null, null)}>
+                <option value="">—</option>
+                {live.teams.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.emoji}
+                  </option>
+                ))}
+              </select>
+              <select className="input" style={{ width: 110, padding: "2px 4px", fontSize: 12 }} value={l.status} onChange={(e) => admin(l.id, l.team_id, e.target.value as LeadStatus)}>
+                {STATUS_ORDER.map((k) => (
+                  <option key={k} value={k}>
+                    {STATUS[k].label}
+                  </option>
+                ))}
+              </select>
+              <button className="btn sm" title="Remove" onClick={() => admin(l.id, null, null, true)}>
+                ✕
+              </button>
+            </div>
+          );
+        })}
+        {live.leads.length === 0 && <p className="dim">No businesses yet. Import from OpenStreetMap, and teams can add more on their phones.</p>}
+      </div>
     </div>
   );
 }

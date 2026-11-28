@@ -488,3 +488,62 @@ a { color: inherit; }
 .cmp-vals i { font-style: normal; font-size: 36px; color: var(--dim); }
 .cmp-vals b { font-size: 76px; font-weight: 900; color: var(--gold); line-height: 1; }
 .cmp-vals small { font-size: 24px; color: var(--dim); font-family: var(--body); }
+
+/* ───────────── Field activity */
+.fmap { width: 100%; height: 100%; background: #0b1026; }
+.fmap.big .leaflet-tooltip { font-size: 18px; font-weight: 700; background: rgba(10,14,40,.85); color: #fff; border: 0; box-shadow: none; }
+.fmap.big .leaflet-tooltip-top:before { border-top-color: rgba(10,14,40,.85); }
+.fscreen { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 620px; }
+.scene-in:has(.fscreen) { inset: 0; }
+.fs-map { position: relative; }
+.fs-legend { position: absolute; left: 24px; bottom: 24px; z-index: 500; display: flex; gap: 18px; padding: 12px 20px; border-radius: 16px; background: rgba(10,14,40,.85); font-size: 20px; }
+.fs-legend i { display: inline-block; width: 16px; height: 16px; border-radius: 50%; margin-right: 6px; vertical-align: -2px; }
+.fs-side { padding: 40px 40px 30px; display: flex; flex-direction: column; gap: 22px; background: rgba(5,8,24,.6); border-left: 1px solid var(--line); }
+.fs-clock small { display: block; color: var(--dim); text-transform: uppercase; letter-spacing: .2em; font-size: 18px; font-weight: 700; }
+.fs-clock b { font-family: var(--display); font-weight: 900; font-size: 96px; line-height: 1; font-variant-numeric: tabular-nums; }
+.fs-clock.over b { color: #ff5a5f; animation: blink 1s infinite; }
+.fs-bar { height: 10px; border-radius: 9px; background: rgba(255,255,255,.1); overflow: hidden; margin-top: 10px; }
+.fs-bar i { display: block; height: 100%; background: linear-gradient(90deg, #22c55e, #ffd166); transition: width 1s linear; }
+.fs-total { display: flex; align-items: center; gap: 18px; font-size: 30px; font-weight: 700; }
+.fs-total b { font-family: var(--display); font-size: 110px; font-weight: 900; color: #22c55e; line-height: 1; }
+.fs-total small { color: var(--dim); font-size: 20px; font-weight: 500; }
+.fs-teams { display: flex; flex-direction: column; gap: 10px; }
+.fs-team { display: grid; grid-template-columns: 34px 50px 1fr auto; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 16px; background: rgba(255,255,255,.05); border-left: 6px solid var(--c); }
+.fs-rank { font-family: var(--display); font-weight: 900; font-size: 30px; color: var(--dim); }
+.fs-em { font-size: 38px; }
+.fs-tn { font-family: var(--display); font-weight: 800; font-size: 28px; }
+.fs-tbar { height: 8px; border-radius: 9px; background: rgba(255,255,255,.08); margin-top: 6px; overflow: hidden; }
+.fs-tbar i { display: block; height: 100%; background: var(--c); transition: width .8s; }
+.fs-tv { text-align: right; }
+.fs-tv b { display: block; font-family: var(--display); font-size: 44px; font-weight: 900; color: #22c55e; line-height: 1; }
+.fs-tv small { color: var(--dim); font-size: 16px; }
+.fs-feed { margin-top: auto; display: flex; flex-direction: column; gap: 6px; font-size: 20px; }
+.fs-feed div { animation: rise .5s both; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fb-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; margin-top: 40px; }
+.fb-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.fb-steps div { padding: 24px; border-radius: 22px; background: rgba(255,255,255,.06); border: 1px solid var(--line); animation: rise .6s both; }
+.fb-steps span { font-size: 48px; display: block; }
+.fb-steps b { display: block; font-family: var(--display); font-size: 32px; margin: 8px 0 4px; }
+.fb-steps small { color: #c9cff0; font-size: 23px; line-height: 1.35; display: block; }
+.fb-clock { padding: 40px; text-align: center; display: flex; flex-direction: column; gap: 16px; justify-content: center; }
+.fb-clock small { color: var(--gold); text-transform: uppercase; letter-spacing: .2em; font-weight: 700; font-size: 22px; }
+.fb-clock b { font-family: var(--display); font-weight: 900; font-size: 140px; line-height: 1; font-variant-numeric: tabular-nums; }
+.fb-pts { font-size: 28px; font-weight: 600; }
+.fb-pts em { font-style: normal; color: #22c55e; font-weight: 800; }
+/* phone field tab */
+.ft-map { height: 42vh; border-radius: 18px; overflow: hidden; border: 1px solid var(--line); position: relative; }
+.ft-bar { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+.ft-bar button { font-size: 13px; padding: 7px 10px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.05); cursor: pointer; }
+.ft-bar button.on { background: var(--c); border-color: var(--c); }
+.ft-list { display: flex; flex-direction: column; gap: 6px; }
+.ft-item { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid var(--line); text-align: left; width: 100%; cursor: pointer; }
+.ft-item.sel { border-color: #fff; }
+.ft-dot { width: 14px; height: 14px; border-radius: 50%; flex: none; border: 3px solid transparent; box-sizing: content-box; }
+.ft-item b { display: block; font-size: 15px; }
+.ft-item small { color: var(--dim); font-size: 12px; }
+.ft-sheet { margin: 10px 0; padding: 14px; border-radius: 16px; background: rgba(255,255,255,.08); border: 1px solid var(--line); }
+.ft-st { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0; }
+.ft-st button { padding: 12px 8px; border-radius: 12px; border: 2px solid transparent; background: rgba(255,255,255,.06); font-weight: 700; cursor: pointer; font-size: 14px; }
+.ft-st button.on { border-color: #fff; background: var(--sc); color: #0b1026; }
+.ft-clock { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 14px; background: rgba(255,255,255,.06); margin-bottom: 10px; font-weight: 700; }
+.ft-clock b { font-family: var(--display); font-size: 22px; font-variant-numeric: tabular-nums; }

@@ -25,6 +25,8 @@ export type Scene = Base &
     | { type: "splitpay" }
     | { type: "ams" }
     | { type: "lineup" }
+    | { type: "fieldbrief" }
+    | { type: "fieldmap" }
     | { type: "leaderboard" }
     | { type: "thanks" }
   );
@@ -38,6 +40,7 @@ export const SECTIONS = [
   { key: "p2", name: "Part 2 · Advance Merchant Settlement" },
   { key: "p3", name: "Part 3 · BML SplitPay" },
   { key: "p4", name: "Part 4 · Payment Solutions" },
+  { key: "field", name: "Field activity · Maamigili" },
   { key: "final", name: "Knowledge check & close" },
 ];
 
@@ -248,6 +251,15 @@ export const SCENES: Scene[] = [
   { id: "p4-case", section: "p4", label: "Scenario · Resort guest", type: "scenario", kicker: "Team challenge · DCC", title: "Pitch it in one line", prompt: "A guest with a UK card is paying USD 480 at a resort boutique. Write the one-line DCC offer the cashier should say, and why the merchant benefits.", tips: ["What the guest hears", "What the merchant earns", "Keep it under 30 words"] },
 
   // ───────── Final
+  // ───────── Field activity
+  { id: "field-brief", section: "field", label: "Mission briefing", type: "fieldbrief" },
+  { id: "field-map", section: "field", label: "Live field map", type: "fieldmap" },
+  {
+    id: "field-feedback", section: "field", label: "Field feedback", type: "scenario",
+    kicker: "Field activity · debrief", title: "What did we learn in Maamigili?",
+    prompt: "Back from the field: what worked when you pitched BML branding, what objections did you hear, and what should the bank do to win the businesses that said no?",
+    tips: ["What worked", "Objections we heard", "What BML should do next"],
+  },
   { id: "p1-q1", section: "final", label: "Q1 · Housing schemes", type: "quiz", kicker: "Knowledge check · 1 of 13 · Commercial updates", question: "When do Help to Buy and Help to Build applications open?", options: ["9:00 AM, Sun 29 Nov", "11:00 AM, Sun 29 Nov", "11:00 AM, Mon 30 Nov", "They are already open"], answer: 1, explain: "Applications open at 11:00 AM on Sunday, 29 November 2026.", limit: 15, points: 100 },
   { id: "p1-q2", section: "final", label: "Q2 · KYC timing", type: "quiz", kicker: "Knowledge check · 2 of 13 · Commercial updates", question: "In the new onboarding journey, when does the customer submit completed KYC?", options: ["Before starting onboarding", "Together with the card application", "After getting their credentials", "At the first branch visit"], answer: 2, explain: "Account opening and card application go in together; completed KYC comes after the credentials.", limit: 15, points: 100 },
   { id: "p1-q3", section: "final", label: "Q3 · Statements", type: "quiz", kicker: "Knowledge check · 3 of 13 · Commercial updates", question: "How many years of statements can customers generate from Internet Banking?", options: ["1 year", "2 years", "3 years", "Up to 5 years"], answer: 3, explain: "Online statements of up to 5 years are available in Internet Banking.", limit: 15, points: 100 },
