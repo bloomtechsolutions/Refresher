@@ -349,9 +349,23 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
               </div>
               <input className="input" placeholder="Contact person / phone (optional)" value={contact} onChange={(e) => setContact(e.target.value)} />
               <textarea className="input" style={{ marginTop: 6 }} rows={2} placeholder="Notes: what they said, what they need" value={notes} onChange={(e) => setNotes(e.target.value)} />
-              <div className="row" style={{ marginTop: 6 }}>
+              <div className="row" style={{ marginTop: 6, flexWrap: "wrap" }}>
                 <button className="btn sm" disabled={busy} onClick={() => save(lead.status)}>
                   Save notes
+                </button>
+                <button
+                  className="btn sm"
+                  disabled={busy}
+                  onClick={async () => {
+                    const n = prompt("Business name", lead.name.includes("not mapped") ? "" : lead.name);
+                    if (!n || !n.trim()) return;
+                    const { error } = await supabase.rpc("refresher_lead_rename", { p_team: auth.team, p_pin: auth.pin, p_id: lead.id, p_name: n.trim() });
+                    if (error) return toast(rpcError(error));
+                    toast("Name updated ✓");
+                    live.refresh();
+                  }}
+                >
+                  ✏️ Rename
                 </button>
                 {lead.status !== "todo" && !lead.added_by && (
                   <button className="btn sm" disabled={busy} onClick={() => save("todo")}>

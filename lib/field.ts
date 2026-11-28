@@ -1,9 +1,9 @@
 import type { Lead, LeadStatus, Team } from "./live";
 
 // Adh. Maamigili (Alif Dhaal Atoll). Map fits to the businesses once loaded.
-export const MAAMIGILI_CENTER: [number, number] = [3.4745, 72.8375];
-// south, west, north, east – generous box around the island
-export const MAAMIGILI_BBOX = [3.455, 72.81, 3.495, 72.865];
+export const MAAMIGILI_CENTER: [number, number] = [3.4765, 72.8375];
+// south, west, north, east – Maamigili only (excludes the Dhiffushi resort island to the west)
+export const MAAMIGILI_BBOX = [3.466, 72.829, 3.486, 72.849];
 export const FIELD_MINUTES = 120;
 
 export const STATUS: Record<LeadStatus, { label: string; color: string; icon: string }> = {
