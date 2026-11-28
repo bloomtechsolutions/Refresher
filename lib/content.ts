@@ -8,6 +8,7 @@ export type Scene = Base &
   (
     | { type: "welcome" }
     | { type: "attendance" }
+    | { type: "feedback" }
     | { type: "title"; kicker: string; title: string; subtitle?: string; presenter?: string; number?: string; accent?: string }
     | { type: "holding"; kicker: string; title: string; subtitle: string; presenter: string }
     | { type: "wordcloud"; prompt: string; hint: string; index: number }
@@ -282,6 +283,7 @@ export const SCENES: Scene[] = [
   { id: "p4-q2", section: "final", label: "Q12 · DCC rebate", type: "quiz", kicker: "Knowledge check · 12 of 13 · Payments", question: "What monthly rebate can merchants earn on DCC transactions?", options: ["0.5%", "1%", "2%", "No rebate"], answer: 1, explain: "1% monthly rebates, plus zero POS transaction fees when the minimum DCC volume is met.", limit: 15, points: 100 },
   { id: "p4-q3", section: "final", label: "Q13 · Acquiring", type: "quiz", kicker: "Knowledge check · 13 of 13 · Payments", question: "Which of these is NOT one of BML’s acquiring products?", options: ["Static QR", "Merchant Portal / mPOS", "Unattended terminals", "Cheque deposit kiosk"], answer: 3, explain: "Acquiring products: POS terminals, static QR, Merchant Portal / mPOS and unattended terminals.", limit: 15, points: 100 },
   { id: "final-board", section: "final", label: "Final leaderboard", type: "leaderboard" },
+  { id: "feedback", section: "final", label: "Feedback QR", type: "feedback" },
   { id: "thanks", section: "final", label: "Takeaways & thanks", type: "thanks" },
 ];
 

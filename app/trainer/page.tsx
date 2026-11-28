@@ -8,7 +8,7 @@ import { FIELD_MINUTES, STATUS, STATUS_ORDER, downloadText, fetchOsmBusinesses, 
 import type { LeadStatus } from "@/lib/live";
 
 const KEY = "bml-refresher-trainer";
-const ICON: Record<string, string> = { welcome: "👋", fieldbrief: "🎯", fieldresults: "📊", chbrief: "💡", chboard: "🧩", fieldmap: "🗺️", attendance: "📝", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
+const ICON: Record<string, string> = { welcome: "👋", feedback: "📝", fieldbrief: "🎯", fieldresults: "📊", chbrief: "💡", chboard: "🧩", fieldmap: "🗺️", attendance: "📝", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
 
 export default function TrainerPage() {
   const [pin, setPin] = useState<string | null>(null);
@@ -449,6 +449,7 @@ function Controls({ live, scene, pin, patch, phaseTo }: { live: Live; scene: Sce
   }
 
   if (scene.type === "attendance") return <AttendanceCtrl live={live} pin={pin} />;
+  if (scene.type === "feedback") return <FeedbackCtrl live={live} pin={pin} />;
   if (scene.type === "fieldbrief" || scene.type === "fieldmap" || scene.type === "fieldresults") return <FieldCtrl live={live} pin={pin} />;
   if (scene.type === "chbrief" || scene.type === "chboard") return <ChallengeCtrl live={live} pin={pin} patch={patch} focus={scene.type === "chboard" ? Number(d.focus || 0) : null} />;
 
@@ -745,6 +746,34 @@ function FieldCtrl({ live, pin }: { live: Live; pin: string }) {
           );
         })}
         {live.leads.length === 0 && <p className="dim">No businesses yet. Import from OpenStreetMap, and teams can add more on their phones.</p>}
+      </div>
+    </div>
+  );
+}
+
+function FeedbackCtrl({ live, pin }: { live: Live; pin: string }) {
+  const [url, setUrl] = useState(live.settings.feedback_url || "");
+  const [msg, setMsg] = useState("");
+  useEffect(() => setUrl(live.settings.feedback_url || ""), [live.settings.feedback_url]);
+  const save = async () => {
+    const { error } = await supabase.rpc("refresher_set_setting", { p_pin: pin, p_key: "feedback_url", p_value: url });
+    setMsg(error ? rpcError(error) : "Saved ✓ The screen updates now.");
+    live.refresh();
+  };
+  return (
+    <div className="panel">
+      <h3>Feedback QR</h3>
+      <label className="dim" style={{ fontSize: 13 }}>
+        Feedback survey link (we generate the QR from it)
+      </label>
+      <input className="input" placeholder="https://www.surveymonkey.com/r/…" value={url} onChange={(e) => setUrl(e.target.value)} />
+      <div className="ctrl" style={{ marginTop: 10 }}>
+        <button className="btn primary" onClick={save}>
+          Save
+        </button>
+        <span className="dim" style={{ fontSize: 13 }}>
+          {msg}
+        </span>
       </div>
     </div>
   );

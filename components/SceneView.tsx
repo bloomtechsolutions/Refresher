@@ -54,7 +54,7 @@ export default function SceneView({ live, sceneId }: { live: Live; sceneId?: str
 
 function Footer({ live, scene }: { live: Live; scene: Scene }) {
   const sc = visibleScores(live);
-  if (scene.type === "welcome" || scene.type === "slides" || scene.type === "attendance" || scene.type === "fieldmap") return null;
+  if (scene.type === "welcome" || scene.type === "slides" || scene.type === "attendance" || scene.type === "feedback" || scene.type === "fieldmap") return null;
   return (
     <div className="footer">
       <div className="ticker">
@@ -72,6 +72,8 @@ function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
   switch (scene.type) {
     case "attendance":
       return <Attendance live={live} />;
+    case "feedback":
+      return <Feedback live={live} />;
     case "welcome":
       return <Welcome live={live} />;
     case "leaderboard":
@@ -299,6 +301,42 @@ function Attendance({ live }: { live: Live }) {
           <div className="qr-empty">QR code coming soon</div>
         )}
         <div className="join-s">Everyone, please sign in individually</div>
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────── Feedback (external survey QR set from the trainer view)
+function Feedback({ live }: { live: Live }) {
+  const url = live.settings.feedback_url || "";
+  return (
+    <div className="welcome attend">
+      <div className="welcome-left">
+        <div className="kicker">Bank of Maldives</div>
+        <div className="att-welcome">
+          Thank you for joining <span className="grad">Central Refresher 2026</span>
+        </div>
+        <h1 className="hero" style={{ fontSize: 150 }}>
+          Share your
+          <br />
+          <span className="grad">feedback</span>
+        </h1>
+        <div className="att-steps">
+          <div>
+            <b>1</b> Open your phone camera
+          </div>
+          <div>
+            <b>2</b> Scan the QR code
+          </div>
+          <div>
+            <b>3</b> Tell us what worked and what to improve
+          </div>
+        </div>
+      </div>
+      <div className="welcome-right glass">
+        <div className="join-t">Scan to give feedback</div>
+        {url ? <Qr text={url} size={420} /> : <div className="qr-empty">QR code coming soon</div>}
+        <div className="join-s">It takes about 2 minutes · everyone, please respond</div>
       </div>
     </div>
   );
