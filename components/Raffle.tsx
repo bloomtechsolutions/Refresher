@@ -82,9 +82,9 @@ export default function RaffleScreen({ live }: { live: Live }) {
     <div className={"raffle " + (spinning && !done ? "spinning" : "") + (landed && !done ? " landed" : "") + (done ? " done" : "")}>
       <div className="rf-head">
         <div>
-          <div className="kicker">SME raffle draw</div>
+          <div className="kicker">Adh. Maamigili SME Engagement Session</div>
           <h2 className="h2" style={{ fontSize: 60, margin: "6px 0 0" }}>
-            {landed && !done ? "We have a winner!" : spinning && !done ? "Drawing…" : done ? `Draw #${st.draw_no} winner` : "Who will be our lucky winner?"}
+            {landed && !done ? "We have a winner!" : spinning && !done ? "Drawing…" : done ? `Draw #${st.draw_no} winner` : "Lucky Draw of Business Solutions Subscription for USD 1,000"}
           </h2>
           {spinning && st.prize && (
             <div className="rf-prize">
