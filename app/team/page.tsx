@@ -1,9 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
 import { CATEGORIES, MAAMIGILI_CENTER, STATUS, distanceM, fieldStats } from "@/lib/field";
 import type { LeadStatus } from "@/lib/live";
-const FieldMap = dynamic(() => import("@/components/FieldMap"), { ssr: false });
 import { supabase } from "@/lib/supabase";
 import { Live, Team, quizPoints, rpcError, useLive, useNow, visibleScores } from "@/lib/live";
 import { OPTION_COLORS, OPTION_SHAPES, Scene, sceneById } from "@/lib/content";
@@ -197,7 +195,6 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
   const [me, setMe] = useState<[number, number] | null>(null);
   const [sel, setSel] = useState<number | null>(null);
   const [filter, setFilter] = useState<"near" | "todo" | "mine" | "all">("near");
-  const [base, setBase] = useState<"street" | "sat" | "vector">("street");
   const [adding, setAdding] = useState<{ lat: number; lon: number } | null>(null);
   const [newName, setNewName] = useState("");
   const [newCat, setNewCat] = useState(CATEGORIES[0]);
@@ -273,33 +270,7 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
         <span className="chip">✅ {stats.branded} branded (+{stats.branded * 50} pts)</span>
         <span className="chip">👋 {stats.visited} visited</span>
       </div>
-      <div className="ft-map">
-        <FieldMap
-          leads={live.leads}
-          teams={live.teams}
-          selected={sel}
-          onSelect={(id) => {
-            setSel(id);
-            setAdding(null);
-          }}
-          me={me}
-          base={base}
-          draft={adding ? [adding.lat, adding.lon] : null}
-          onMapClick={(lat, lon) => adding && setAdding({ lat, lon })}
-        />
-      </div>
       <div className="ft-bar">
-        {(
-          [
-            ["street", "🗺️ Map"],
-            ["sat", "🛰️ Satellite"],
-            ["vector", "🏝️ Simple"],
-          ] as const
-        ).map(([k, label]) => (
-          <button key={k} className={base === k ? "on" : ""} onClick={() => setBase(k)}>
-            {label}
-          </button>
-        ))}
         <button
           className={adding ? "on" : ""}
           onClick={() => {
@@ -315,7 +286,7 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
         <div className="ft-sheet">
           <b>New business</b>
           <p className="dim" style={{ fontSize: 12, margin: "4px 0 8px" }}>
-            Placed at {me ? "your GPS location" : "the island centre"}. Tap the map to move it.
+            {me ? "Saved at your current GPS location, so add it while standing at the business." : "Location not available. Allow location access so the business is placed correctly."}
           </p>
           <input className="input" placeholder="Business name" value={newName} onChange={(e) => setNewName(e.target.value)} />
           <select className="input" style={{ marginTop: 8 }} value={newCat} onChange={(e) => setNewCat(e.target.value)}>
@@ -340,8 +311,8 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
                 {owner ? ` · ${owner.emoji} ${owner.name}` : ""}
               </div>
             </div>
-            <a className="btn sm" href={`https://www.google.com/maps/dir/?api=1&destination=${lead.lat},${lead.lon}&travelmode=walking`} target="_blank" rel="noreferrer">
-              🧭 Go
+            <a className="btn sm gold" href={`https://www.google.com/maps/search/?api=1&query=${lead.lat},${lead.lon}`} target="_blank" rel="noreferrer">
+              📍 Google Maps
             </a>
           </div>
           {locked ? (

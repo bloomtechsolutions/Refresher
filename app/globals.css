@@ -496,7 +496,8 @@ a { color: inherit; }
 .fscreen { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 620px; }
 .scene-in:has(.fscreen) { inset: 0; }
 .fs-map { position: relative; }
-.fs-legend { position: absolute; left: 24px; bottom: 24px; z-index: 500; display: flex; gap: 18px; padding: 12px 20px; border-radius: 16px; background: rgba(10,14,40,.85); font-size: 20px; }
+.fs-legend { display: flex; gap: 22px; flex-wrap: wrap; padding: 14px 22px; border-radius: 16px; background: rgba(255,255,255,.06); font-size: 22px; }
+.fs-legend b { margin-left: 4px; }
 .fs-legend i { display: inline-block; width: 16px; height: 16px; border-radius: 50%; margin-right: 6px; vertical-align: -2px; }
 .fs-side { padding: 40px 40px 30px; display: flex; flex-direction: column; gap: 22px; background: rgba(5,8,24,.6); border-left: 1px solid var(--line); }
 .fs-clock small { display: block; color: var(--dim); text-transform: uppercase; letter-spacing: .2em; font-size: 18px; font-weight: 700; }
@@ -547,3 +548,11 @@ a { color: inherit; }
 .ft-st button.on { border-color: #fff; background: var(--sc); color: #0b1026; }
 .ft-clock { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 14px; background: rgba(255,255,255,.06); margin-bottom: 10px; font-weight: 700; }
 .ft-clock b { font-family: var(--display); font-size: 22px; font-variant-numeric: tabular-nums; }
+
+.fs-board { padding: 40px 36px 30px 50px; display: flex; flex-direction: column; gap: 20px; overflow: hidden; }
+.fs-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; align-content: start; overflow: hidden; }
+.fs-card { padding: 14px 18px; border-radius: 16px; background: rgba(255,255,255,.05); border: 2px solid rgba(255,255,255,.08); border-left: 8px solid var(--sc); animation: pop .5s both; }
+.fs-card.st-branded { background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.6); border-left-color: var(--sc); }
+.fs-card.st-todo { opacity: .65; }
+.fs-card-n { font-family: var(--display); font-weight: 800; font-size: 24px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fs-card-m { color: var(--dim); font-size: 17px; margin-top: 4px; }

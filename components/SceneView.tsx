@@ -4,10 +4,8 @@ import { AGENDA, OPTION_COLORS, OPTION_SHAPES, SCENES, Scene, TAKEAWAYS, WORD_PR
 import { Live, quizPoints, useNow, visibleScores } from "@/lib/live";
 import WordCloud from "./WordCloud";
 import Qr from "./Qr";
-import dynamic from "next/dynamic";
 import { STATUS, fieldStats, FIELD_MINUTES } from "@/lib/field";
 import { BRANDED_POINTS } from "@/lib/live";
-const FieldMap = dynamic(() => import("./FieldMap"), { ssr: false });
 
 // A fixed 1920×1080 stage scaled to fit its container: the projector and the
 // trainer preview render exactly the same picture.
@@ -358,10 +356,10 @@ function FieldBrief({ live }: { live: Live }) {
       <div className="fb-grid">
         <div className="fb-steps">
           {[
-            ["🗺️", "Open the Field tab", "Your phone shows the island map and every business"],
+            ["📋", "Open the Field tab", "Your phone lists every business, nearest first"],
             ["🚶", "Visit & pitch", "Shops, guesthouses, cafés and other businesses"],
             ["✅", "Update the status", "Branding updated, visited, follow-up or declined"],
-            ["➕", "Found a new one?", "Tap “Add business here” to put it on the map"],
+            ["➕", "Found a new one?", "Tap “Add business here” to add it to the list"],
           ].map(([i, t, d], k) => (
             <div key={t} style={{ animationDelay: `${k * 0.12}s` }}>
               <span>{i}</span>
@@ -377,7 +375,7 @@ function FieldBrief({ live }: { live: Live }) {
             ✅ Every business with BML branding = <em>+{BRANDED_POINTS} pts</em>
           </div>
           <div className="dim" style={{ fontSize: 24 }}>
-            {live.leads.length} businesses on the map so far
+            {live.leads.length} businesses on the list so far
           </div>
         </div>
       </div>
@@ -397,14 +395,31 @@ function FieldScreen({ live }: { live: Live }) {
   const recent = [...live.leads].filter((l) => l.status !== "todo").sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 4);
   return (
     <div className="fscreen">
-      <div className="fs-map">
-        <FieldMap leads={live.leads} teams={live.teams} big />
+      <div className="fs-board">
         <div className="fs-legend">
           {(["branded", "visited", "followup", "declined", "todo"] as const).map((k) => (
             <span key={k}>
-              <i style={{ background: STATUS[k].color }} /> {STATUS[k].label}
+              <i style={{ background: STATUS[k].color }} /> {STATUS[k].label} <b>{live.leads.filter((l) => l.status === k).length}</b>
             </span>
           ))}
+        </div>
+        <div className="fs-cards">
+          {[...live.leads]
+            .sort((a, b) => ["branded", "visited", "followup", "declined", "todo"].indexOf(a.status) - ["branded", "visited", "followup", "declined", "todo"].indexOf(b.status) || b.updated_at.localeCompare(a.updated_at))
+            .map((l) => {
+              const t = live.teams.find((x) => x.id === l.team_id);
+              return (
+                <div key={l.id} className={"fs-card st-" + l.status} style={{ ["--sc" as any]: STATUS[l.status].color, ["--c" as any]: t?.color || "transparent" }}>
+                  <div className="fs-card-n">
+                    {STATUS[l.status].icon} {l.name}
+                  </div>
+                  <div className="fs-card-m">
+                    {l.category}
+                    {t ? ` · ${t.emoji} ${t.name.replace(/^Team /, "")}` : ""}
+                  </div>
+                </div>
+              );
+            })}
         </div>
       </div>
       <div className="fs-side">
@@ -422,7 +437,7 @@ function FieldScreen({ live }: { live: Live }) {
             branded
             <br />
             <small>
-              {touched} visited · {total} on map
+              {touched} visited · {total} businesses
             </small>
           </span>
         </div>
