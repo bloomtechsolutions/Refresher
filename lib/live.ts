@@ -146,9 +146,11 @@ export function useLive(): Live {
       loaders.raffle();
     }, 6000);
 
+    const fastPoll = setInterval(() => loaders.settings(), 1500);
     return () => {
       alive = false;
       clearInterval(poll);
+      clearInterval(fastPoll);
       supabase.removeChannel(ch);
     };
   }, [loaders]);

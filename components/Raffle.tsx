@@ -27,28 +27,44 @@ function hash(n: number) {
   return (x ^ (x >>> 16)) >>> 0;
 }
 
-const STEPS = 75;
+// Step schedule: hops start every ~55 ms and stretch out geometrically (≈1 s at the end),
+// so the highlight keeps moving for the whole draw and the last hop lands on the winner exactly at `duration`.
+function schedule(duration: number) {
+  const times: number[] = [];
+  let t = 0;
+  let gap = 55;
+  while (t + gap < duration) {
+    t += gap;
+    times.push(t);
+    gap *= 1.065;
+  }
+  return times; // the winner is lit at `duration`
+}
 
-// Which entry is lit at time t: fast at first, slowing down (ease-out), landing on the winner.
+// Which entry is lit at time t (same on every screen: depends only on the draw's seed and start time).
 export function litEntry(pool: RaffleEntry[], st: RaffleState, elapsed: number) {
   if (!pool.length || !st.duration) return null;
-  const D = st.duration;
-  if (elapsed >= D) return st.winner_id ?? null;
-  const p = 1 - Math.pow(1 - Math.max(0, elapsed) / D, 3);
-  const k = Math.min(STEPS - 1, Math.floor(p * STEPS));
-  if (k >= STEPS - 1) return st.winner_id ?? null;
-  const pick = pool[hash((st.seed || 1) * 1000 + k) % pool.length];
-  // avoid lighting the winner too early (keeps the suspense)
-  if (pick.id === st.winner_id && pool.length > 1) return pool[(pool.indexOf(pick) + 1) % pool.length].id;
-  return pick.id;
+  if (elapsed >= st.duration) return st.winner_id ?? null;
+  const times = schedule(st.duration);
+  let k = 0;
+  while (k < times.length && times[k] <= elapsed) k++;
+  const others = pool.length > 1 ? pool.filter((e) => e.id !== st.winner_id) : pool;
+  // never light the same number twice in a row
+  let idx = hash((st.seed || 1) * 1000 + k) % others.length;
+  const prev = k > 0 ? hash((st.seed || 1) * 1000 + k - 1) % others.length : -1;
+  if (idx === prev && others.length > 1) idx = (idx + 1) % others.length;
+  return others[idx].id;
 }
+
+const REVEAL_DELAY = 1600; // winner glows alone for a moment before the card appears
 
 export default function RaffleScreen({ live }: { live: Live }) {
   const st = raffleState(live);
   const spinning = st.phase === "spin";
   const now = useNow(live.offset, spinning ? 40 : 1000);
   const elapsed = spinning && st.started_at ? now - new Date(st.started_at).getTime() : 0;
-  const done = spinning && elapsed >= (st.duration || 0);
+  const landed = spinning && elapsed >= (st.duration || 0);
+  const done = spinning && elapsed >= (st.duration || 0) + REVEAL_DELAY;
   const mask = live.settings.raffle_mask === "1";
 
   const entries = live.raffle;
@@ -60,15 +76,15 @@ export default function RaffleScreen({ live }: { live: Live }) {
 
   const n = entries.length;
   const scale = Math.max(0.5, Math.min(1.25, 1.45 - n / 130));
-  const left = spinning && !done ? Math.max(0, Math.ceil(((st.duration || 0) - elapsed) / 1000)) : 0;
+  const left = spinning && !landed ? Math.max(0, Math.ceil(((st.duration || 0) - elapsed) / 1000)) : 0;
 
   return (
-    <div className={"raffle " + (spinning && !done ? "spinning" : "") + (done ? " done" : "")}>
+    <div className={"raffle " + (spinning && !done ? "spinning" : "") + (landed && !done ? " landed" : "") + (done ? " done" : "")}>
       <div className="rf-head">
         <div>
           <div className="kicker">SME raffle draw</div>
           <h2 className="h2" style={{ fontSize: 60, margin: "6px 0 0" }}>
-            {spinning && !done ? "Drawing…" : done ? `Draw #${st.draw_no} winner` : "Who will be our lucky winner?"}
+            {landed && !done ? "We have a winner!" : spinning && !done ? "Drawing…" : done ? `Draw #${st.draw_no} winner` : "Who will be our lucky winner?"}
           </h2>
           {spinning && st.prize && (
             <div className="rf-prize">
@@ -99,7 +115,7 @@ export default function RaffleScreen({ live }: { live: Live }) {
         {n === 0 && <div className="cloud-empty" style={{ position: "static" }}>Waiting for entries…</div>}
       </div>
 
-      {spinning && !done && <div className="rf-timer">{left}</div>}
+      {spinning && !landed && <div className="rf-timer">{left}</div>}
 
       {winner && (
         <div className="rf-win">
