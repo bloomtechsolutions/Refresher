@@ -143,7 +143,7 @@ export default function RaffleEntryPage() {
                 </b>
                 <small>
                   {e.phone}
-                  {e.won_at ? ` · winner of draw #${e.draw_no}` : ""}
+                  {e.won_at ? ` · winner of draw #${e.draw_no}${e.prize ? ` · 🎁 ${e.prize}` : ""}` : ""}
                 </small>
               </span>
               {!e.won_at && (

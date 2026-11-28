@@ -637,3 +637,7 @@ a { color: inherit; }
 .rf-entry { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
 .rf-entry b { display: block; }
 .rf-entry small { color: var(--dim); }
+
+.rf-prize { margin-top: 10px; display: inline-block; padding: 10px 24px; border-radius: 999px; background: rgba(255,209,102,.16); border: 2px solid rgba(255,209,102,.6); font-size: 34px; color: #ffe7a8; animation: pop .5s both; }
+.rf-prize b { color: #fff; }
+.rf-win-prize { display: inline-block; margin: 4px 0 18px; padding: 10px 30px; border-radius: 999px; background: linear-gradient(90deg, #ff5a5f, #ffb020); color: #fff; font-family: var(--display); font-weight: 800; font-size: 44px; box-shadow: 0 10px 40px rgba(255,90,95,.4); }

@@ -11,7 +11,7 @@ export type Member = { name: string; gender: string; job: string; unit: string; 
 export type Lead = { id: number; name: string; category: string; lat: number; lon: number; osm_id: string | null; team_id: number | null; status: LeadStatus; contact: string; notes: string; added_by: number | null; updated_at: string };
 export type LeadStatus = "todo" | "visited" | "branded" | "declined" | "followup";
 export type Challenge = { id: number; team_id: number; assigned_team: number | null; area: string; title: string; details: string; status: "pending" | "approved" | "rejected" | "solved"; trainer_note: string; solution: string; next_step: string; created_at: string; updated_at: string };
-export type RaffleEntry = { id: number; name: string; phone: string; added_by: string; created_at: string; won_at: string | null; draw_no: number | null };
+export type RaffleEntry = { id: number; name: string; phone: string; added_by: string; created_at: string; won_at: string | null; draw_no: number | null; prize: string };
 export type Bonus = { id: number; team_id: number; points: number; reason: string; created_at: string };
 
 export type Live = {

@@ -760,6 +760,7 @@ function RaffleCtrl({ live, pin }: { live: Live; pin: string }) {
   const spinning = st.phase === "spin" && st.started_at && now - new Date(st.started_at).getTime() < (st.duration || 0);
   const [msg, setMsg] = useState("");
   const [url, setUrl] = useState("");
+  const [prize, setPrize] = useState("");
   useEffect(() => setUrl(window.location.origin + "/raffle"), []);
   const eligible = live.raffle.filter((e) => !e.won_at).length;
   const winners = live.raffle.filter((e) => e.won_at).sort((a, b) => (a.draw_no || 0) - (b.draw_no || 0));
@@ -771,13 +772,15 @@ function RaffleCtrl({ live, pin }: { live: Live; pin: string }) {
     live.refresh();
   };
   const draw = async () => {
-    const { error } = await supabase.rpc("refresher_raffle_draw", { p_pin: pin });
+    const { error } = await supabase.rpc("refresher_raffle_draw", { p_pin: pin, p_prize: prize.trim() });
     setMsg(error ? rpcError(error) : "Drawing… the winner appears on screen in 15–20 seconds.");
+    if (!error) setPrize("");
     live.refresh();
   };
   return (
     <div className="panel">
       <h3>SME raffle draw</h3>
+      <input className="input" style={{ marginBottom: 8 }} maxLength={80} placeholder="🎁 Prize for this draw, e.g. Smart TV" value={prize} disabled={!!spinning} onChange={(e) => setPrize(e.target.value)} />
       <div className="ctrl">
         <button className="btn go" style={{ fontSize: 18, padding: "14px 22px" }} disabled={!!spinning || eligible === 0} onClick={draw}>
           🎲 {winners.length ? "Draw next winner" : "Draw the winner"}
@@ -801,6 +804,7 @@ function RaffleCtrl({ live, pin }: { live: Live; pin: string }) {
           {winners.map((w) => (
             <div key={w.id} className="feed-i" style={{ ["--c" as any]: "#FFD166", marginTop: 4 }}>
               🏆 #{w.draw_no} {w.name} <span className="dim">· {w.phone}</span>
+              {w.prize && <b style={{ marginLeft: "auto", color: "#FFD166" }}>🎁 {w.prize}</b>}
             </div>
           ))}
         </div>

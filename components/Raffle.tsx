@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import type { Live, RaffleEntry } from "@/lib/live";
 import { useNow } from "@/lib/live";
 
-export type RaffleState = { phase?: "spin"; started_at?: string; duration?: number; winner_id?: number; draw_no?: number; seed?: number };
+export type RaffleState = { phase?: "spin"; started_at?: string; duration?: number; winner_id?: number; draw_no?: number; seed?: number; prize?: string };
 
 export function raffleState(live: Live): RaffleState {
   try {
@@ -70,6 +70,11 @@ export default function RaffleScreen({ live }: { live: Live }) {
           <h2 className="h2" style={{ fontSize: 60, margin: "6px 0 0" }}>
             {spinning && !done ? "Drawing…" : done ? `Draw #${st.draw_no} winner` : "Who will be our lucky winner?"}
           </h2>
+          {spinning && st.prize && (
+            <div className="rf-prize">
+              🎁 Drawing for: <b>{st.prize}</b>
+            </div>
+          )}
         </div>
         <div className="rf-count">
           <b>{pool.length}</b>
@@ -107,6 +112,7 @@ export default function RaffleScreen({ live }: { live: Live }) {
             <div className="rf-trophy">🏆</div>
             <small>Congratulations!</small>
             <div className="rf-win-name">{winner.name}</div>
+            {(winner.prize || st.prize) && <div className="rf-win-prize">🎁 {winner.prize || st.prize}</div>}
             <div className="rf-win-phone">{maskPhone(winner.phone, mask)}</div>
           </div>
         </div>
@@ -118,6 +124,7 @@ export default function RaffleScreen({ live }: { live: Live }) {
           {pastWinners.map((w) => (
             <span key={w.id}>
               #{w.draw_no} {w.name}
+              {w.prize ? ` · ${w.prize}` : ""}
             </span>
           ))}
         </div>
