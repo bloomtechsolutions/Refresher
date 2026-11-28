@@ -227,7 +227,8 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
 
   const list = useMemo(() => {
     const ref = me || MAAMIGILI_CENTER;
-    let ls = live.leads.map((l) => ({ l, d: distanceM(ref, [l.lat, l.lon]) }));
+    // businesses found online have no exact position yet: list them after the located ones
+    let ls = live.leads.map((l) => ({ l, d: l.osm_id?.startsWith("web/") ? 1e9 : distanceM(ref, [l.lat, l.lon]) }));
     if (filter === "todo") ls = ls.filter((x) => x.l.status === "todo");
     if (filter === "mine") ls = ls.filter((x) => x.l.team_id === team.id);
     if (filter === "all") ls.sort((a, b) => a.l.name.localeCompare(b.l.name));
@@ -238,6 +239,9 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
   const save = async (status: LeadStatus) => {
     if (!lead) return;
     setBusy(true);
+    if (lead.osm_id?.startsWith("web/") && me) {
+      await supabase.rpc("refresher_lead_locate", { p_team: auth.team, p_pin: auth.pin, p_id: lead.id, p_lat: me[0], p_lon: me[1] });
+    }
     const { error } = await supabase.rpc("refresher_lead_update", { p_team: auth.team, p_pin: auth.pin, p_id: lead.id, p_status: status, p_contact: contact, p_notes: notes });
     setBusy(false);
     if (error) return toast(rpcError(error));
@@ -307,11 +311,15 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
               <b style={{ fontSize: 18 }}>{lead.name}</b>
               <div className="dim" style={{ fontSize: 12 }}>
                 {lead.category}
-                {me ? ` · ${Math.round(distanceM(me, [lead.lat, lead.lon]))} m away` : ""}
+                {lead.osm_id?.startsWith("web/") ? " · location not pinned yet" : me ? ` · ${Math.round(distanceM(me, [lead.lat, lead.lon]))} m away` : ""}
                 {owner ? ` · ${owner.emoji} ${owner.name}` : ""}
               </div>
             </div>
-            <a className="btn sm gold" href={`https://www.google.com/maps/search/?api=1&query=${lead.lat},${lead.lon}`} target="_blank" rel="noreferrer">
+            <a className="btn sm gold" href={
+                lead.osm_id?.startsWith("web/")
+                  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.name + ", Maamigili, Maldives")}`
+                  : `https://www.google.com/maps/search/?api=1&query=${lead.lat},${lead.lon}`
+              } target="_blank" rel="noreferrer">
               📍 Google Maps
             </a>
           </div>
@@ -386,7 +394,7 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
                   {t ? ` · ${t.emoji}` : ""}
                 </small>
               </span>
-              <small className="dim">{d < 1000 ? `${Math.round(d)} m` : `${(d / 1000).toFixed(1)} km`}</small>
+              <small className="dim">{d >= 1e9 ? "📍?" : d < 1000 ? `${Math.round(d)} m` : `${(d / 1000).toFixed(1)} km`}</small>
             </button>
           );
         })}
