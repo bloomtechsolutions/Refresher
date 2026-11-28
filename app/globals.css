@@ -583,3 +583,27 @@ a { color: inherit; }
 .cp-st { font-size: 12px; font-weight: 800; color: var(--sc); text-transform: uppercase; letter-spacing: .08em; }
 .cp-note { margin-top: 6px; font-size: 13px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.06); }
 .cp-h { margin: 18px 0 4px; font-size: 12px; font-weight: 800; color: var(--gold); letter-spacing: .14em; text-transform: uppercase; }
+
+/* ───────────── Field results pivot */
+.pv { width: 100%; border-collapse: separate; border-spacing: 0 8px; font-size: 30px; }
+.pv thead th { font-size: 19px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); font-weight: 800; text-align: center; padding: 0 10px 6px; }
+.pv thead th:first-child { text-align: left; }
+.pv thead th i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--sc); vertical-align: 0; margin-right: 4px; }
+.pv tbody tr { animation: rise .5s both; }
+.pv tbody th, .pv tfoot th { text-align: left; font-family: var(--display); font-weight: 800; padding: 16px 22px; background: rgba(255,255,255,.06); border-left: 8px solid var(--c, #555); border-radius: 16px 0 0 16px; white-space: nowrap; }
+.pv td { text-align: center; padding: 16px 10px; background: rgba(255,255,255,.04); font-family: var(--display); font-weight: 700; font-variant-numeric: tabular-nums; }
+.pv td:last-child { border-radius: 0 16px 16px 0; }
+.pv .pv-b { color: #22c55e; font-weight: 900; font-size: 1.15em; }
+.pv .pv-t { font-weight: 900; }
+.pv .pv-p { color: var(--gold); font-weight: 900; }
+.pv .pv-zero { color: rgba(255,255,255,.25); }
+.pv tr.lead-row th, .pv tr.lead-row td { background: color-mix(in srgb, var(--c) 22%, transparent); }
+.pv tr.pv-un th, .pv tr.pv-un td { color: var(--dim); background: rgba(255,255,255,.02); font-weight: 600; }
+.pv tr.pv-un th { border-left-color: rgba(255,255,255,.15); }
+.pv tfoot th, .pv tfoot td { background: rgba(255,209,102,.12); border-top: 2px solid rgba(255,209,102,.4); }
+.pv tfoot th { border-left-color: var(--gold); }
+.pv.compact { font-size: 13px; border-spacing: 0 3px; }
+.pv.compact thead th { font-size: 10px; padding: 0 4px 2px; letter-spacing: 0; }
+.pv.compact tbody th, .pv.compact tfoot th { padding: 6px 8px; border-left-width: 4px; border-radius: 8px 0 0 8px; }
+.pv.compact td { padding: 6px 4px; }
+.pv.compact td:last-child { border-radius: 0 8px 8px 0; }

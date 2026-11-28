@@ -3,12 +3,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Live, quizPoints, rpcError, useLive, useNow, visibleScores } from "@/lib/live";
 import { OPTION_COLORS, SCENES, SECTIONS, Scene, sceneById, Phase } from "@/lib/content";
-import SceneView, { AMS_LADDER, Stage, splitCalc } from "@/components/SceneView";
+import SceneView, { AMS_LADDER, FieldPivotTable, Stage, splitCalc } from "@/components/SceneView";
 import { FIELD_MINUTES, STATUS, STATUS_ORDER, downloadText, fetchOsmBusinesses, leadsCsv } from "@/lib/field";
 import type { LeadStatus } from "@/lib/live";
 
 const KEY = "bml-refresher-trainer";
-const ICON: Record<string, string> = { welcome: "👋", fieldbrief: "🎯", chbrief: "💡", chboard: "🧩", fieldmap: "🗺️", attendance: "📝", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
+const ICON: Record<string, string> = { welcome: "👋", fieldbrief: "🎯", fieldresults: "📊", chbrief: "💡", chboard: "🧩", fieldmap: "🗺️", attendance: "📝", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
 
 export default function TrainerPage() {
   const [pin, setPin] = useState<string | null>(null);
@@ -449,7 +449,7 @@ function Controls({ live, scene, pin, patch, phaseTo }: { live: Live; scene: Sce
   }
 
   if (scene.type === "attendance") return <AttendanceCtrl live={live} pin={pin} />;
-  if (scene.type === "fieldbrief" || scene.type === "fieldmap") return <FieldCtrl live={live} pin={pin} />;
+  if (scene.type === "fieldbrief" || scene.type === "fieldmap" || scene.type === "fieldresults") return <FieldCtrl live={live} pin={pin} />;
   if (scene.type === "chbrief" || scene.type === "chboard") return <ChallengeCtrl live={live} pin={pin} patch={patch} focus={scene.type === "chboard" ? Number(d.focus || 0) : null} />;
 
   if (scene.type === "lineup") {
@@ -702,6 +702,9 @@ function FieldCtrl({ live, pin }: { live: Live; pin: string }) {
         </button>
       </div>
       {msg && <p className="dim" style={{ fontSize: 13 }}>{msg}</p>}
+      <div style={{ margin: "10px 0" }}>
+        <FieldPivotTable live={live} compact />
+      </div>
       <div className="row" style={{ flexWrap: "wrap", gap: 6, fontSize: 13, margin: "8px 0" }}>
         {counts.map(([k, n]) => (
           <span key={k} className="chip">

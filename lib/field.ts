@@ -105,3 +105,17 @@ export function fieldStats(leads: Lead[], teamId: number) {
     followup: mine.filter((l) => l.status === "followup").length,
   };
 }
+
+export const PIVOT_COLS: LeadStatus[] = ["branded", "followup", "visited", "declined", "todo"];
+
+// Team × status summary (the same as an Excel pivot of the CSV export)
+export function fieldPivot(leads: Lead[], teams: Team[]) {
+  const row = (ls: Lead[]) => {
+    const c = Object.fromEntries(PIVOT_COLS.map((k) => [k, ls.filter((l) => l.status === k).length])) as Record<LeadStatus, number>;
+    return { counts: c, total: ls.length };
+  };
+  const rows = teams.map((t) => ({ team: t, ...row(leads.filter((l) => l.team_id === t.id)) }));
+  const unclaimed = row(leads.filter((l) => !l.team_id));
+  const grand = row(leads);
+  return { rows, unclaimed, grand };
+}

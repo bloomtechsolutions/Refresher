@@ -4,7 +4,7 @@ import { AGENDA, OPTION_COLORS, OPTION_SHAPES, SCENES, Scene, TAKEAWAYS, WORD_PR
 import { Live, quizPoints, useNow, visibleScores } from "@/lib/live";
 import WordCloud from "./WordCloud";
 import Qr from "./Qr";
-import { STATUS, fieldStats, FIELD_MINUTES } from "@/lib/field";
+import { STATUS, fieldStats, FIELD_MINUTES, PIVOT_COLS, fieldPivot } from "@/lib/field";
 import { BRANDED_POINTS } from "@/lib/live";
 
 // A fixed 1920×1080 stage scaled to fit its container: the projector and the
@@ -82,6 +82,8 @@ function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
       return <ChallengeBoard live={live} />;
     case "fieldbrief":
       return <FieldBrief live={live} />;
+    case "fieldresults":
+      return <FieldResults live={live} />;
     case "fieldmap":
       return <FieldScreen live={live} />;
     case "lineup":
@@ -592,6 +594,86 @@ function FieldScreen({ live }: { live: Live }) {
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ───────────────────────── Field results (team × status pivot)
+export function FieldPivotTable({ live, compact }: { live: Live; compact?: boolean }) {
+  const { rows, unclaimed, grand } = fieldPivot(live.leads, live.teams);
+  const sorted = compact ? rows : [...rows].sort((a, b) => b.counts.branded - a.counts.branded || b.total - a.total);
+  const topB = Math.max(...rows.map((r) => r.counts.branded));
+  const cell = (n: number) => (n ? n : <span className="pv-zero">–</span>);
+  return (
+    <table className={"pv " + (compact ? "compact" : "")}>
+      <thead>
+        <tr>
+          <th>Team</th>
+          {PIVOT_COLS.map((k) => (
+            <th key={k} style={{ ["--sc" as any]: STATUS[k].color }}>
+              <i /> {STATUS[k].label}
+            </th>
+          ))}
+          <th>Total</th>
+          {!compact && <th>Points</th>}
+        </tr>
+      </thead>
+      <tbody>
+        {sorted.map((r, i) => (
+          <tr key={r.team.id} className={!compact && r.counts.branded === topB && topB > 0 ? "lead-row" : ""} style={{ ["--c" as any]: r.team.color, animationDelay: `${i * 0.08}s` }}>
+            <th>
+              {!compact && r.counts.branded === topB && topB > 0 ? "👑 " : ""}
+              {r.team.emoji} {r.team.name}
+            </th>
+            {PIVOT_COLS.map((k) => (
+              <td key={k} className={k === "branded" ? "pv-b" : ""}>
+                {cell(r.counts[k])}
+              </td>
+            ))}
+            <td className="pv-t">{r.total}</td>
+            {!compact && <td className="pv-p">+{r.counts.branded * 50}</td>}
+          </tr>
+        ))}
+        {unclaimed.total > 0 && (
+          <tr className="pv-un">
+            <th>Not yet claimed</th>
+            {PIVOT_COLS.map((k) => (
+              <td key={k}>{cell(unclaimed.counts[k])}</td>
+            ))}
+            <td className="pv-t">{unclaimed.total}</td>
+            {!compact && <td />}
+          </tr>
+        )}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th>Grand total</th>
+          {PIVOT_COLS.map((k) => (
+            <td key={k} className={k === "branded" ? "pv-b" : ""}>
+              {grand.counts[k]}
+            </td>
+          ))}
+          <td className="pv-t">{grand.total}</td>
+          {!compact && <td className="pv-p">+{grand.counts.branded * 50}</td>}
+        </tr>
+      </tfoot>
+    </table>
+  );
+}
+
+function FieldResults({ live }: { live: Live }) {
+  const { grand } = fieldPivot(live.leads, live.teams);
+  const reached = grand.total - grand.counts.todo;
+  return (
+    <div className="pad">
+      <div className="kicker">Field activity · Adh. Maamigili · results</div>
+      <h2 className="h2" style={{ fontSize: 64 }}>
+        {grand.counts.branded} businesses now carry BML branding
+      </h2>
+      <p className="sub" style={{ marginBottom: 18 }}>
+        {reached} of {grand.total} businesses reached · {grand.counts.followup} need a follow-up visit
+      </p>
+      <FieldPivotTable live={live} />
     </div>
   );
 }

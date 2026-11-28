@@ -29,6 +29,7 @@ export type Scene = Base &
     | { type: "chbrief" }
     | { type: "chboard" }
     | { type: "fieldmap" }
+    | { type: "fieldresults" }
     | { type: "leaderboard" }
     | { type: "thanks" }
   );
@@ -256,7 +257,8 @@ export const SCENES: Scene[] = [
   // ───────── Final
   // ───────── Field activity
   { id: "field-brief", section: "field", label: "Mission briefing", type: "fieldbrief" },
-  { id: "field-map", section: "field", label: "Live field map", type: "fieldmap" },
+  { id: "field-map", section: "field", label: "Live field board", type: "fieldmap" },
+  { id: "field-results", section: "field", label: "Field results table", type: "fieldresults" },
   {
     id: "field-feedback", section: "field", label: "Field feedback", type: "scenario",
     kicker: "Field activity · debrief", title: "What did we learn in Maamigili?",
