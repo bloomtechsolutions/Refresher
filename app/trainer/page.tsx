@@ -4,11 +4,13 @@ import { supabase } from "@/lib/supabase";
 import { Live, quizPoints, rpcError, useLive, useNow, visibleScores } from "@/lib/live";
 import { OPTION_COLORS, SCENES, SECTIONS, Scene, sceneById, Phase } from "@/lib/content";
 import SceneView, { AMS_LADDER, FieldPivotTable, Stage, splitCalc } from "@/components/SceneView";
+import { raffleState } from "@/components/Raffle";
+import Qr from "@/components/Qr";
 import { FIELD_MINUTES, STATUS, STATUS_ORDER, downloadText, fetchOsmBusinesses, leadsCsv } from "@/lib/field";
 import type { LeadStatus } from "@/lib/live";
 
 const KEY = "bml-refresher-trainer";
-const ICON: Record<string, string> = { welcome: "👋", feedback: "📝", fieldbrief: "🎯", fieldresults: "📊", chbrief: "💡", chboard: "🧩", fieldmap: "🗺️", attendance: "📝", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
+const ICON: Record<string, string> = { welcome: "👋", raffle: "🎟️", feedback: "📝", fieldbrief: "🎯", fieldresults: "📊", chbrief: "💡", chboard: "🧩", fieldmap: "🗺️", attendance: "📝", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
 
 export default function TrainerPage() {
   const [pin, setPin] = useState<string | null>(null);
@@ -450,6 +452,7 @@ function Controls({ live, scene, pin, patch, phaseTo }: { live: Live; scene: Sce
 
   if (scene.type === "attendance") return <AttendanceCtrl live={live} pin={pin} />;
   if (scene.type === "feedback") return <FeedbackCtrl live={live} pin={pin} />;
+  if (scene.type === "raffle") return <RaffleCtrl live={live} pin={pin} />;
   if (scene.type === "fieldbrief" || scene.type === "fieldmap" || scene.type === "fieldresults") return <FieldCtrl live={live} pin={pin} />;
   if (scene.type === "chbrief" || scene.type === "chboard") return <ChallengeCtrl live={live} pin={pin} patch={patch} focus={scene.type === "chboard" ? Number(d.focus || 0) : null} />;
 
@@ -746,6 +749,82 @@ function FieldCtrl({ live, pin }: { live: Live; pin: string }) {
           );
         })}
         {live.leads.length === 0 && <p className="dim">No businesses yet. Import from OpenStreetMap, and teams can add more on their phones.</p>}
+      </div>
+    </div>
+  );
+}
+
+function RaffleCtrl({ live, pin }: { live: Live; pin: string }) {
+  const st = raffleState(live);
+  const now = useNow(live.offset, 500);
+  const spinning = st.phase === "spin" && st.started_at && now - new Date(st.started_at).getTime() < (st.duration || 0);
+  const [msg, setMsg] = useState("");
+  const [url, setUrl] = useState("");
+  useEffect(() => setUrl(window.location.origin + "/raffle"), []);
+  const eligible = live.raffle.filter((e) => !e.won_at).length;
+  const winners = live.raffle.filter((e) => e.won_at).sort((a, b) => (a.draw_no || 0) - (b.draw_no || 0));
+  const act = async (a: string) => {
+    if (a === "reset_winners" && !confirm("Put all winners back into the draw?")) return;
+    if (a === "clear_all" && !confirm("Delete ALL raffle entries? This cannot be undone.")) return;
+    const { error } = await supabase.rpc("refresher_raffle_admin", { p_pin: pin, p_action: a });
+    setMsg(error ? rpcError(error) : "");
+    live.refresh();
+  };
+  const draw = async () => {
+    const { error } = await supabase.rpc("refresher_raffle_draw", { p_pin: pin });
+    setMsg(error ? rpcError(error) : "Drawing… the winner appears on screen in 15–20 seconds.");
+    live.refresh();
+  };
+  return (
+    <div className="panel">
+      <h3>SME raffle draw</h3>
+      <div className="ctrl">
+        <button className="btn go" style={{ fontSize: 18, padding: "14px 22px" }} disabled={!!spinning || eligible === 0} onClick={draw}>
+          🎲 {winners.length ? "Draw next winner" : "Draw the winner"}
+        </button>
+        <button className="btn sm" disabled={!!spinning} onClick={() => act("idle")}>
+          Back to number cloud
+        </button>
+      </div>
+      <p className="dim" style={{ fontSize: 13 }}>
+        {live.raffle.length} entries · {eligible} still in the draw. {msg}
+      </p>
+      <div className="ctrl">
+        <label className="row" style={{ fontSize: 14, gap: 6 }}>
+          <input type="checkbox" checked={live.settings.raffle_mask === "1"} onChange={(e) => act(e.target.checked ? "mask_on" : "mask_off")} />
+          Hide middle digits on screen (privacy)
+        </label>
+      </div>
+      {winners.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <b style={{ fontSize: 14 }}>Winners</b>
+          {winners.map((w) => (
+            <div key={w.id} className="feed-i" style={{ ["--c" as any]: "#FFD166", marginTop: 4 }}>
+              🏆 #{w.draw_no} {w.name} <span className="dim">· {w.phone}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="row" style={{ marginTop: 14, alignItems: "flex-start", gap: 14 }}>
+        {url && <Qr text={url} size={110} />}
+        <div style={{ fontSize: 13 }}>
+          <b>Staff entry page</b>
+          <div className="dim">
+            <a href="/raffle" target="_blank">
+              {url.replace(/^https?:\/\//, "")}
+            </a>
+            <br />
+            Staff sign in with the trainer PIN or their team PIN and add each participant’s name and phone.
+          </div>
+        </div>
+      </div>
+      <div className="ctrl" style={{ marginTop: 12 }}>
+        <button className="btn sm" onClick={() => act("reset_winners")}>
+          Put winners back in the draw
+        </button>
+        <button className="btn sm warn" onClick={() => act("clear_all")}>
+          Delete all entries
+        </button>
       </div>
     </div>
   );

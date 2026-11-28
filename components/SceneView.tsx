@@ -4,6 +4,7 @@ import { AGENDA, OPTION_COLORS, OPTION_SHAPES, SCENES, Scene, TAKEAWAYS, WORD_PR
 import { Live, quizPoints, useNow, visibleScores } from "@/lib/live";
 import WordCloud from "./WordCloud";
 import Qr from "./Qr";
+import RaffleScreen from "./Raffle";
 import { STATUS, fieldStats, FIELD_MINUTES, PIVOT_COLS, fieldPivot } from "@/lib/field";
 import { BRANDED_POINTS } from "@/lib/live";
 
@@ -54,7 +55,7 @@ export default function SceneView({ live, sceneId }: { live: Live; sceneId?: str
 
 function Footer({ live, scene }: { live: Live; scene: Scene }) {
   const sc = visibleScores(live);
-  if (scene.type === "welcome" || scene.type === "slides" || scene.type === "attendance" || scene.type === "feedback" || scene.type === "fieldmap") return null;
+  if (scene.type === "welcome" || scene.type === "slides" || scene.type === "attendance" || scene.type === "feedback" || scene.type === "fieldmap" || scene.type === "raffle") return null;
   return (
     <div className="footer">
       <div className="ticker">
@@ -74,6 +75,8 @@ function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
       return <Attendance live={live} />;
     case "feedback":
       return <Feedback live={live} />;
+    case "raffle":
+      return <RaffleScreen live={live} />;
     case "welcome":
       return <Welcome live={live} />;
     case "leaderboard":

@@ -607,3 +607,33 @@ a { color: inherit; }
 .pv.compact tbody th, .pv.compact tfoot th { padding: 6px 8px; border-left-width: 4px; border-radius: 8px 0 0 8px; }
 .pv.compact td { padding: 6px 4px; }
 .pv.compact td:last-child { border-radius: 0 8px 8px 0; }
+
+/* ───────────── Raffle */
+.scene-in:has(.raffle) { inset: 0; }
+.raffle { position: absolute; inset: 0; padding: 50px 80px 40px; display: flex; flex-direction: column; }
+.rf-head { display: flex; justify-content: space-between; align-items: flex-end; }
+.rf-count { text-align: right; font-family: var(--display); }
+.rf-count b { display: block; font-size: 100px; font-weight: 900; line-height: 1; color: var(--gold); }
+.rf-count small { color: var(--dim); font-size: 22px; text-transform: uppercase; letter-spacing: .15em; }
+.rf-cloud { flex: 1; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 6px 22px; padding: 20px 0; overflow: hidden; }
+.rf-num { font-family: var(--display); font-weight: 800; line-height: 1.15; color: hsl(var(--h) 85% 75%); opacity: .85; font-variant-numeric: tabular-nums; transition: transform .12s, color .12s, opacity .3s, text-shadow .12s; animation: rfFloat 6s ease-in-out infinite alternate; }
+@keyframes rfFloat { from { transform: translateY(-3px); } to { transform: translateY(3px); } }
+.rf-num.won { opacity: .18; text-decoration: line-through; }
+.raffle.spinning .rf-num { opacity: .35; animation: none; }
+.rf-num.lit { opacity: 1 !important; color: #fff; transform: scale(1.55); text-shadow: 0 0 24px #ffd166, 0 0 60px #ff5a5f; position: relative; z-index: 2; }
+.raffle.done .rf-num { opacity: .12; }
+.rf-timer { position: absolute; right: 70px; bottom: 40px; width: 120px; height: 120px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-weight: 900; font-size: 64px; background: rgba(228,0,43,.85); box-shadow: 0 0 60px rgba(228,0,43,.6); animation: pulse 1s infinite; }
+.rf-win { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(circle, rgba(10,14,40,.55), rgba(5,8,24,.92)); animation: sceneIn .6s both; overflow: hidden; }
+.rf-win-card { text-align: center; padding: 60px 110px; border-radius: 48px; background: linear-gradient(160deg, rgba(255,209,102,.22), rgba(255,255,255,.05)); border: 3px solid var(--gold); box-shadow: 0 0 120px rgba(255,209,102,.45); animation: pop 1s .2s both; }
+.rf-trophy { font-size: 150px; animation: float 3s ease-in-out infinite; }
+.rf-win-card small { display: block; color: var(--gold); text-transform: uppercase; letter-spacing: .3em; font-weight: 800; font-size: 28px; margin-top: 6px; }
+.rf-win-name { font-family: var(--display); font-weight: 900; font-size: 110px; line-height: 1.05; margin: 14px 0; }
+.rf-win-phone { font-family: var(--display); font-weight: 800; font-size: 64px; color: var(--gold); letter-spacing: .04em; }
+.rf-win .confetti i { top: -30px; width: 14px; height: 26px; animation-duration: 4s; }
+.rf-past { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; font-size: 22px; font-weight: 700; color: var(--gold); }
+.rf-past span { padding: 6px 14px; border-radius: 999px; background: rgba(255,209,102,.12); color: #fff; font-weight: 600; }
+/* entry page */
+.rf-entry-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.rf-entry { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+.rf-entry b { display: block; }
+.rf-entry small { color: var(--dim); }

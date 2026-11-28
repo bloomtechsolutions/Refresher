@@ -11,6 +11,7 @@ export type Member = { name: string; gender: string; job: string; unit: string; 
 export type Lead = { id: number; name: string; category: string; lat: number; lon: number; osm_id: string | null; team_id: number | null; status: LeadStatus; contact: string; notes: string; added_by: number | null; updated_at: string };
 export type LeadStatus = "todo" | "visited" | "branded" | "declined" | "followup";
 export type Challenge = { id: number; team_id: number; assigned_team: number | null; area: string; title: string; details: string; status: "pending" | "approved" | "rejected" | "solved"; trainer_note: string; solution: string; next_step: string; created_at: string; updated_at: string };
+export type RaffleEntry = { id: number; name: string; phone: string; added_by: string; created_at: string; won_at: string | null; draw_no: number | null };
 export type Bonus = { id: number; team_id: number; points: number; reason: string; created_at: string };
 
 export type Live = {
@@ -25,6 +26,7 @@ export type Live = {
   settings: Record<string, string>;
   leads: Lead[];
   challenges: Challenge[];
+  raffle: RaffleEntry[];
   offset: number; // serverNow - localNow (ms)
   refresh: () => void;
 };
@@ -41,6 +43,7 @@ export function useLive(): Live {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [leads, setLeads] = useState<Lead[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [raffle, setRaffle] = useState<RaffleEntry[]>([]);
   const [ready, setReady] = useState(false);
   const [connected, setConnected] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -63,6 +66,10 @@ export function useLive(): Live {
       answers: async () => {
         const { data } = await supabase.from("refresher_answers").select("*").limit(5000);
         if (data) setAnswers(data as Answer[]);
+      },
+      raffle: async () => {
+        const { data } = await supabase.from("refresher_raffle").select("*").order("id").limit(3000);
+        if (data) setRaffle(data as RaffleEntry[]);
       },
       challenges: async () => {
         const { data } = await supabase.from("refresher_challenges").select("*").order("id");
@@ -123,6 +130,7 @@ export function useLive(): Live {
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_settings" }, () => reload("settings"))
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_leads" }, () => reload("leads"))
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_challenges" }, () => reload("challenges"))
+      .on("postgres_changes", { event: "*", schema: "public", table: "refresher_raffle" }, () => reload("raffle"))
       .subscribe((status) => setConnected(status === "SUBSCRIBED"));
 
     // safety net polling in case a websocket drops on venue Wi-Fi
@@ -135,6 +143,7 @@ export function useLive(): Live {
       loaders.settings();
       loaders.leads();
       loaders.challenges();
+      loaders.raffle();
     }, 6000);
 
     return () => {
@@ -144,7 +153,7 @@ export function useLive(): Live {
     };
   }, [loaders]);
 
-  return { ready, connected, teams, state, responses, answers, bonus, members, settings, leads, challenges, offset, refresh };
+  return { ready, connected, teams, state, responses, answers, bonus, members, settings, leads, challenges, raffle, offset, refresh };
 }
 
 // ───────── scoring
@@ -203,6 +212,8 @@ export function rpcError(e: any): string {
   if (m.includes("bad pin")) return "Wrong PIN";
   if (m.includes("not open")) return "This activity isn’t open right now";
   if (m.includes("time up")) return "Time’s up!";
+  if (m.includes("duplicate")) return "This phone number is already entered";
+  if (m.includes("no entries")) return "No eligible entries left to draw";
   if (m.includes("taken")) return "Another team is already handling this business";
   if (m.includes("limit")) return "Your team has reached the limit for this question";
   return m;

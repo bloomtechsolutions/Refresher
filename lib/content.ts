@@ -9,6 +9,7 @@ export type Scene = Base &
     | { type: "welcome" }
     | { type: "attendance" }
     | { type: "feedback" }
+    | { type: "raffle" }
     | { type: "title"; kicker: string; title: string; subtitle?: string; presenter?: string; number?: string; accent?: string }
     | { type: "holding"; kicker: string; title: string; subtitle: string; presenter: string }
     | { type: "wordcloud"; prompt: string; hint: string; index: number }
@@ -46,6 +47,7 @@ export const SECTIONS = [
   { key: "p4", name: "Part 4 · Payment Solutions" },
   { key: "field", name: "Field activity · Maamigili" },
   { key: "challenges", name: "Challenges & Solutions" },
+  { key: "raffle", name: "Raffle draw" },
   { key: "final", name: "Knowledge check & close" },
 ];
 
@@ -266,6 +268,9 @@ export const SCENES: Scene[] = [
     prompt: "Back from the field: what worked when you pitched BML branding, what objections did you hear, and what should the bank do to win the businesses that said no?",
     tips: ["What worked", "Objections we heard", "What BML should do next"],
   },
+  // ───────── Raffle
+  { id: "raffle", section: "raffle", label: "Raffle draw", type: "raffle" },
+
   // ───────── Challenges & Solutions
   { id: "ch-brief", section: "challenges", label: "Raise challenges", type: "chbrief" },
   { id: "ch-board", section: "challenges", label: "Challenges board", type: "chboard" },
