@@ -4,7 +4,8 @@ import { CATEGORIES, MAAMIGILI_CENTER, STATUS, distanceM, fieldStats } from "@/l
 import type { LeadStatus } from "@/lib/live";
 import { supabase } from "@/lib/supabase";
 import { Live, Team, quizPoints, rpcError, useLive, useNow, visibleScores } from "@/lib/live";
-import { OPTION_COLORS, OPTION_SHAPES, Scene, sceneById } from "@/lib/content";
+import { CHALLENGE_AREAS, OPTION_COLORS, OPTION_SHAPES, Scene, sceneById } from "@/lib/content";
+import type { Challenge } from "@/lib/live";
 
 type Auth = { team: number; pin: string };
 const KEY = "bml-refresher-team";
@@ -101,12 +102,14 @@ function TeamApp({ live, team, auth, onLogout }: { live: Live; team: Team; auth:
   const sc = visibleScores(live);
   const rank = sc.findIndex((x) => x.team.id === team.id);
   const [toast, setToast] = useState("");
-  const [tab, setTab] = useState<"live" | "team" | "field">("live");
+  const [tab, setTab] = useState<"live" | "team" | "field" | "ch">("live");
   const mine = live.members.filter((m) => m.team_id === team.id);
   const here = mine.filter((m) => m.present).length;
   // jump back to Live whenever the trainer changes the scene
-  useEffect(() => setTab(live.state.scene === "field-brief" || live.state.scene === "field-map" ? "field" : "live"), [live.state.scene]);
+  useEffect(() => setTab(live.state.scene === "field-brief" || live.state.scene === "field-map" ? "field" : live.state.scene.startsWith("ch-") ? "ch" : "live"), [live.state.scene]);
   const fieldOn = live.leads.length > 0 || live.state.scene.startsWith("field");
+  const chOn = live.challenges.length > 0 || live.state.scene.startsWith("ch-");
+  const nTabs = 2 + (fieldOn ? 1 : 0) + (chOn ? 1 : 0);
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(""), 2500);
@@ -131,7 +134,7 @@ function TeamApp({ live, team, auth, onLogout }: { live: Live; team: Team; auth:
           <small className="dim"> pts</small>
         </div>
       </div>
-      <div className="t-tabs" style={{ gridTemplateColumns: fieldOn ? "1fr 1fr 1fr" : "1fr 1fr" }}>
+      <div className="t-tabs" style={{ gridTemplateColumns: `repeat(${nTabs}, 1fr)` }}>
         <button className={tab === "live" ? "on" : ""} onClick={() => setTab("live")}>
           ⚡ Live
         </button>
@@ -143,8 +146,17 @@ function TeamApp({ live, team, auth, onLogout }: { live: Live; team: Team; auth:
             🗺️ Field
           </button>
         )}
+        {chOn && (
+          <button className={tab === "ch" ? "on" : ""} onClick={() => setTab("ch")}>
+            💡 Challenges
+          </button>
+        )}
       </div>
-      {tab === "field" ? (
+      {tab === "ch" ? (
+        <div className="t-body">
+          <ChallengesTab live={live} team={team} auth={auth} toast={setToast} />
+        </div>
+      ) : tab === "field" ? (
         <div className="t-body">
           <FieldTab live={live} team={team} auth={auth} toast={setToast} />
         </div>
@@ -187,6 +199,158 @@ function Body({ live, scene, team, auth, toast }: { live: Live; scene: Scene; te
       </div>
       {phase && null}
     </div>
+  );
+}
+
+const CH_LABEL: Record<Challenge["status"], { label: string; color: string }> = {
+  pending: { label: "⏳ Pending trainer review", color: "#8892B0" },
+  approved: { label: "💬 Approved: discuss & add solution", color: "#FFB020" },
+  solved: { label: "✅ Solution submitted", color: "#22C55E" },
+  rejected: { label: "✖️ Not approved", color: "#FF5A5F" },
+};
+
+function ChallengesTab({ live, team, auth, toast }: { live: Live; team: Team; auth: Auth; toast: (s: string) => void }) {
+  const [area, setArea] = useState(CHALLENGE_AREAS[0]);
+  const [title, setTitle] = useState("");
+  const [details, setDetails] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState<number | null>(null);
+  const [sol, setSol] = useState<Record<number, { s: string; n: string }>>({});
+
+  const mineRaised = live.challenges.filter((c) => c.team_id === team.id);
+  const toSolve = live.challenges.filter((c) => (c.assigned_team ?? c.team_id) === team.id && (c.status === "approved" || c.status === "solved"));
+  const others = live.challenges.filter((c) => (c.assigned_team ?? c.team_id) !== team.id && (c.status === "approved" || c.status === "solved"));
+
+  const submit = async () => {
+    if (!title.trim()) return;
+    setBusy(true);
+    const { error } = editing
+      ? await supabase.rpc("refresher_challenge_edit", { p_team: auth.team, p_pin: auth.pin, p_id: editing, p_area: area, p_title: title.trim(), p_details: details, p_withdraw: false })
+      : await supabase.rpc("refresher_challenge_submit", { p_team: auth.team, p_pin: auth.pin, p_area: area, p_title: title.trim(), p_details: details });
+    setBusy(false);
+    if (error) return toast(rpcError(error));
+    toast(editing ? "Updated and sent for review ✓" : "Sent to the trainer for review ✓");
+    setTitle("");
+    setDetails("");
+    setEditing(null);
+    live.refresh();
+  };
+  const withdraw = async (id: number) => {
+    if (!confirm("Withdraw this challenge?")) return;
+    await supabase.rpc("refresher_challenge_edit", { p_team: auth.team, p_pin: auth.pin, p_id: id, p_area: null, p_title: "", p_details: "", p_withdraw: true });
+    live.refresh();
+  };
+  const solve = async (c: Challenge) => {
+    const v = sol[c.id] || { s: c.solution, n: c.next_step };
+    if (!v.s?.trim()) return toast("Write the solution first");
+    setBusy(true);
+    const { error } = await supabase.rpc("refresher_challenge_solve", { p_team: auth.team, p_pin: auth.pin, p_id: c.id, p_solution: v.s.trim(), p_next: v.n || "" });
+    setBusy(false);
+    if (error) return toast(rpcError(error));
+    toast("Solution submitted ✅");
+    live.refresh();
+  };
+  const raisedBy = (c: Challenge) => live.teams.find((t) => t.id === c.team_id);
+
+  return (
+    <>
+      <div className="t-kicker">Challenges & Solutions</div>
+      <div className="t-title" style={{ marginBottom: 8 }}>
+        {editing ? "Edit your challenge" : "Raise a challenge"}
+      </div>
+      <div className="cp-form">
+        <select className="input" value={area} onChange={(e) => setArea(e.target.value)}>
+          {CHALLENGE_AREAS.map((a) => (
+            <option key={a}>{a}</option>
+          ))}
+        </select>
+        <input className="input" maxLength={160} placeholder="Challenge in one line, e.g. Account opening needs too many forms" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <textarea className="input" rows={3} maxLength={1500} placeholder="What happens today? Who is affected? Any example?" value={details} onChange={(e) => setDetails(e.target.value)} />
+        <div className="row">
+          <button className="btn primary" style={{ flex: 1 }} disabled={busy || !title.trim()} onClick={submit}>
+            {editing ? "Update & resend" : "Send for review"}
+          </button>
+          {editing && (
+            <button
+              className="btn"
+              onClick={() => {
+                setEditing(null);
+                setTitle("");
+                setDetails("");
+              }}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      </div>
+
+      {toSolve.length > 0 && <div className="cp-h">Your team’s challenges to solve</div>}
+      {toSolve.map((c) => {
+        const v = sol[c.id] ?? { s: c.solution, n: c.next_step };
+        const rb = raisedBy(c);
+        return (
+          <div key={c.id} className="cp-item" style={{ ["--sc" as any]: CH_LABEL[c.status].color }}>
+            <div className="cp-st">{CH_LABEL[c.status].label}</div>
+            <b>{c.title}</b>
+            <small className="dim">
+              {c.area}
+              {rb && rb.id !== team.id ? ` · raised by ${rb.emoji} ${rb.name}` : ""}
+            </small>
+            {c.details && <div style={{ fontSize: 13, marginTop: 4 }}>{c.details}</div>}
+            {c.trainer_note && <div className="cp-note">🎤 Trainer: {c.trainer_note}</div>}
+            <textarea className="input" style={{ marginTop: 8 }} rows={3} placeholder="Your team’s solution" value={v.s} onChange={(e) => setSol({ ...sol, [c.id]: { ...v, s: e.target.value } })} />
+            <input className="input" style={{ marginTop: 6 }} placeholder="Next step & owner (optional), e.g. Propose to Ops by Dec, Aishath" value={v.n} onChange={(e) => setSol({ ...sol, [c.id]: { ...v, n: e.target.value } })} />
+            <button className="btn go" style={{ marginTop: 6, width: "100%" }} disabled={busy} onClick={() => solve(c)}>
+              {c.status === "solved" ? "Update solution" : "Submit solution"}
+            </button>
+          </div>
+        );
+      })}
+
+      {mineRaised.filter((c) => c.status === "pending" || c.status === "rejected").length > 0 && <div className="cp-h">Waiting for the trainer</div>}
+      {mineRaised
+        .filter((c) => c.status === "pending" || c.status === "rejected")
+        .map((c) => (
+          <div key={c.id} className="cp-item" style={{ ["--sc" as any]: CH_LABEL[c.status].color }}>
+            <div className="cp-st">{CH_LABEL[c.status].label}</div>
+            <b>{c.title}</b>
+            <small className="dim">{c.area}</small>
+            {c.trainer_note && <div className="cp-note">🎤 Trainer: {c.trainer_note}</div>}
+            <div className="row" style={{ marginTop: 6 }}>
+              <button
+                className="btn sm"
+                onClick={() => {
+                  setEditing(c.id);
+                  setArea(c.area);
+                  setTitle(c.title);
+                  setDetails(c.details);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
+                ✏️ Edit
+              </button>
+              <button className="btn sm" onClick={() => withdraw(c.id)}>
+                Withdraw
+              </button>
+            </div>
+          </div>
+        ))}
+
+      {others.length > 0 && <div className="cp-h">Other teams</div>}
+      {others.map((c) => {
+        const t = live.teams.find((x) => x.id === (c.assigned_team ?? c.team_id));
+        return (
+          <div key={c.id} className="cp-item" style={{ ["--sc" as any]: CH_LABEL[c.status].color }}>
+            <div className="cp-st">
+              {t?.emoji} {t?.name} · {c.status === "solved" ? "solved" : "discussing"}
+            </div>
+            <b>{c.title}</b>
+            {c.status === "solved" && <div style={{ fontSize: 13, marginTop: 4 }}>✅ {c.solution}</div>}
+          </div>
+        );
+      })}
+    </>
   );
 }
 

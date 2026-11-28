@@ -10,6 +10,7 @@ export type Answer = { activity: string; team_id: number; choice: number; elapse
 export type Member = { name: string; gender: string; job: string; unit: string; is_leader: boolean; team_id: number | null; present: boolean };
 export type Lead = { id: number; name: string; category: string; lat: number; lon: number; osm_id: string | null; team_id: number | null; status: LeadStatus; contact: string; notes: string; added_by: number | null; updated_at: string };
 export type LeadStatus = "todo" | "visited" | "branded" | "declined" | "followup";
+export type Challenge = { id: number; team_id: number; assigned_team: number | null; area: string; title: string; details: string; status: "pending" | "approved" | "rejected" | "solved"; trainer_note: string; solution: string; next_step: string; created_at: string; updated_at: string };
 export type Bonus = { id: number; team_id: number; points: number; reason: string; created_at: string };
 
 export type Live = {
@@ -23,6 +24,7 @@ export type Live = {
   members: Member[];
   settings: Record<string, string>;
   leads: Lead[];
+  challenges: Challenge[];
   offset: number; // serverNow - localNow (ms)
   refresh: () => void;
 };
@@ -38,6 +40,7 @@ export function useLive(): Live {
   const [members, setMembers] = useState<Member[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [ready, setReady] = useState(false);
   const [connected, setConnected] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -60,6 +63,10 @@ export function useLive(): Live {
       answers: async () => {
         const { data } = await supabase.from("refresher_answers").select("*").limit(5000);
         if (data) setAnswers(data as Answer[]);
+      },
+      challenges: async () => {
+        const { data } = await supabase.from("refresher_challenges").select("*").order("id");
+        if (data) setChallenges(data as Challenge[]);
       },
       leads: async () => {
         const { data } = await supabase.from("refresher_leads").select("*").order("name").limit(2000);
@@ -115,6 +122,7 @@ export function useLive(): Live {
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_members" }, () => reload("members"))
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_settings" }, () => reload("settings"))
       .on("postgres_changes", { event: "*", schema: "public", table: "refresher_leads" }, () => reload("leads"))
+      .on("postgres_changes", { event: "*", schema: "public", table: "refresher_challenges" }, () => reload("challenges"))
       .subscribe((status) => setConnected(status === "SUBSCRIBED"));
 
     // safety net polling in case a websocket drops on venue Wi-Fi
@@ -126,6 +134,7 @@ export function useLive(): Live {
       loaders.members();
       loaders.settings();
       loaders.leads();
+      loaders.challenges();
     }, 6000);
 
     return () => {
@@ -135,7 +144,7 @@ export function useLive(): Live {
     };
   }, [loaders]);
 
-  return { ready, connected, teams, state, responses, answers, bonus, members, settings, leads, offset, refresh };
+  return { ready, connected, teams, state, responses, answers, bonus, members, settings, leads, challenges, offset, refresh };
 }
 
 // ───────── scoring

@@ -8,7 +8,7 @@ import { FIELD_MINUTES, STATUS, STATUS_ORDER, downloadText, fetchOsmBusinesses, 
 import type { LeadStatus } from "@/lib/live";
 
 const KEY = "bml-refresher-trainer";
-const ICON: Record<string, string> = { welcome: "👋", fieldbrief: "🎯", fieldmap: "🗺️", attendance: "📝", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
+const ICON: Record<string, string> = { welcome: "👋", fieldbrief: "🎯", chbrief: "💡", chboard: "🧩", fieldmap: "🗺️", attendance: "📝", title: "🎬", holding: "🎤", wordcloud: "☁️", wordwall: "🧱", agenda: "🗓", cards: "🃏", steps: "➡️", countdown: "⏳", facts: "🔢", slides: "🖼", quiz: "❓", scenario: "💬", splitpay: "🧮", ams: "📈", leaderboard: "🏆", lineup: "👥", thanks: "🎉" };
 
 export default function TrainerPage() {
   const [pin, setPin] = useState<string | null>(null);
@@ -450,6 +450,7 @@ function Controls({ live, scene, pin, patch, phaseTo }: { live: Live; scene: Sce
 
   if (scene.type === "attendance") return <AttendanceCtrl live={live} pin={pin} />;
   if (scene.type === "fieldbrief" || scene.type === "fieldmap") return <FieldCtrl live={live} pin={pin} />;
+  if (scene.type === "chbrief" || scene.type === "chboard") return <ChallengeCtrl live={live} pin={pin} patch={patch} focus={scene.type === "chboard" ? Number(d.focus || 0) : null} />;
 
   if (scene.type === "lineup") {
     const f = Number(d.focus || 0);
@@ -498,6 +499,146 @@ function Controls({ live, scene, pin, patch, phaseTo }: { live: Live; scene: Sce
       <p className="dim" style={{ margin: 0 }}>
         Nothing to control here. Team leaders see “Eyes on the screen” and the live leaderboard. Press Next → when ready.
       </p>
+    </div>
+  );
+}
+
+function ChallengeCtrl({ live, pin, patch, focus }: { live: Live; pin: string; patch: (p: Record<string, any>) => void; focus: number | null }) {
+  const [notes, setNotes] = useState<Record<number, string>>({});
+  const [assign, setAssign] = useState<Record<number, number>>({});
+  const [titles, setTitles] = useState<Record<number, string>>({});
+  const [tab, setTab] = useState<"pending" | "approved" | "solved" | "rejected">("pending");
+  const review = async (id: number, status: string) => {
+    if (status === "delete" && !confirm("Delete this challenge?")) return;
+    const c = live.challenges.find((x) => x.id === id)!;
+    const { error } = await supabase.rpc("refresher_challenge_review", {
+      p_pin: pin,
+      p_id: id,
+      p_status: status,
+      p_note: notes[id] ?? c.trainer_note,
+      p_assigned: assign[id] ?? c.assigned_team ?? c.team_id,
+      p_title: titles[id] ?? c.title,
+      p_details: c.details,
+    });
+    if (error) alert(rpcError(error));
+    live.refresh();
+  };
+  const award = async (team: number, id: number) => {
+    await supabase.rpc("refresher_award", { p_pin: pin, p_team: team, p_points: 50, p_reason: "challenge:" + id });
+    live.refresh();
+  };
+  const count = (st: string) => live.challenges.filter((c) => c.status === st).length;
+  const list = live.challenges.filter((c) => c.status === tab);
+  const team = (id: number | null) => live.teams.find((t) => t.id === id);
+  return (
+    <div className="panel">
+      <h3>Challenges & Solutions</h3>
+      <div className="tabs" style={{ flexWrap: "wrap", marginBottom: 10 }}>
+        {(
+          [
+            ["pending", "⏳ To review"],
+            ["approved", "💬 Discussing"],
+            ["solved", "✅ Solved"],
+            ["rejected", "✖️ Rejected"],
+          ] as const
+        ).map(([k, l]) => (
+          <button key={k} className={"btn sm " + (tab === k ? "on" : "")} onClick={() => setTab(k)}>
+            {l} ({count(k)})
+          </button>
+        ))}
+      </div>
+      {focus !== null && (
+        <div className="ctrl" style={{ marginBottom: 10 }}>
+          <span className="dim" style={{ fontSize: 13 }}>
+            Screen:
+          </span>
+          <button className={"btn sm " + (!focus ? "primary" : "")} onClick={() => patch({ focus: 0 })}>
+            Show whole board
+          </button>
+          {focus ? <span className="dim" style={{ fontSize: 13 }}>Spotlighting #{focus}</span> : null}
+        </div>
+      )}
+      <div className="feed" style={{ maxHeight: 520 }}>
+        {list.map((c) => {
+          const by = team(c.team_id);
+          const as = team(c.assigned_team ?? c.team_id);
+          const bonus = live.bonus.filter((b) => b.reason === "challenge:" + c.id).reduce((a, b) => a + b.points, 0);
+          return (
+            <div key={c.id} className="feed-i" style={{ ["--c" as any]: by?.color, flexDirection: "column", alignItems: "stretch", gap: 6 }}>
+              <div className="row" style={{ justifyContent: "space-between" }}>
+                <span className="dim" style={{ fontSize: 12 }}>
+                  #{c.id} · {c.area} · raised by {by?.emoji} {by?.name}
+                </span>
+                {focus !== null && (c.status === "approved" || c.status === "solved") && (
+                  <button className={"btn sm " + (focus === c.id ? "gold" : "")} onClick={() => patch({ focus: c.id })}>
+                    🔦 Spotlight
+                  </button>
+                )}
+              </div>
+              {tab === "pending" ? (
+                <input className="input" style={{ padding: 8 }} value={titles[c.id] ?? c.title} onChange={(e) => setTitles({ ...titles, [c.id]: e.target.value })} />
+              ) : (
+                <b>{c.title}</b>
+              )}
+              {c.details && <div style={{ fontSize: 13 }}>{c.details}</div>}
+              {c.status === "solved" && (
+                <div style={{ fontSize: 13, padding: 8, borderRadius: 8, background: "rgba(34,197,94,.12)" }}>
+                  ✅ <b>{as?.emoji} Solution:</b> {c.solution}
+                  {c.next_step && <div className="dim">➡️ {c.next_step}</div>}
+                </div>
+              )}
+              {(tab === "pending" || tab === "approved") && (
+                <div className="row" style={{ flexWrap: "wrap" }}>
+                  <select className="input" style={{ width: 150, padding: 6, fontSize: 13 }} value={assign[c.id] ?? c.assigned_team ?? c.team_id} onChange={(e) => setAssign({ ...assign, [c.id]: Number(e.target.value) })}>
+                    {live.teams.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        Solve: {t.emoji} {t.name.replace(/^Team /, "")}
+                      </option>
+                    ))}
+                  </select>
+                  <input className="input" style={{ flex: 1, minWidth: 140, padding: 6, fontSize: 13 }} placeholder="Note to the leader (optional)" value={notes[c.id] ?? c.trainer_note} onChange={(e) => setNotes({ ...notes, [c.id]: e.target.value })} />
+                </div>
+              )}
+              <div className="ctrl">
+                {tab === "pending" && (
+                  <>
+                    <button className="btn sm go" onClick={() => review(c.id, "approved")}>
+                      ✓ Approve
+                    </button>
+                    <button className="btn sm warn" onClick={() => review(c.id, "rejected")}>
+                      ✖ Reject
+                    </button>
+                  </>
+                )}
+                {tab === "approved" && (
+                  <button className="btn sm" onClick={() => review(c.id, "approved")}>
+                    Save changes
+                  </button>
+                )}
+                {tab === "solved" && (
+                  <>
+                    <button className="btn sm gold" onClick={() => award(c.assigned_team ?? c.team_id, c.id)}>
+                      +50 good solution {bonus ? `(given ${bonus})` : ""}
+                    </button>
+                    <button className="btn sm" onClick={() => review(c.id, "approved")}>
+                      Send back for rework
+                    </button>
+                  </>
+                )}
+                {tab === "rejected" && (
+                  <button className="btn sm" onClick={() => review(c.id, "approved")}>
+                    Approve after all
+                  </button>
+                )}
+                <button className="btn sm" onClick={() => review(c.id, "delete")}>
+                  🗑
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {list.length === 0 && <p className="dim">Nothing here yet.</p>}
+      </div>
     </div>
   );
 }

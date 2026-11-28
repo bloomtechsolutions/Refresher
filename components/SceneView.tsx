@@ -76,6 +76,10 @@ function SceneBody({ scene, live }: { scene: Scene; live: Live }) {
       return <Welcome live={live} />;
     case "leaderboard":
       return scene.id === "teams" ? <Lineup live={live} title="Meet the teams" /> : <Leaderboard live={live} />;
+    case "chbrief":
+      return <ChallengeBrief live={live} />;
+    case "chboard":
+      return <ChallengeBoard live={live} />;
     case "fieldbrief":
       return <FieldBrief live={live} />;
     case "fieldmap":
@@ -328,6 +332,124 @@ function Welcome({ live }: { live: Live }) {
         {url && <Qr text={url} size={340} />}
         <div className="join-url">{url.replace(/^https?:\/\//, "")}</div>
         <div className="join-s">Pick your team · enter your team PIN</div>
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────── Challenges & Solutions
+const CH_STATUS: Record<string, { label: string; color: string; icon: string }> = {
+  pending: { label: "Pending review", color: "#8892B0", icon: "⏳" },
+  approved: { label: "Finding a solution", color: "#FFB020", icon: "💬" },
+  solved: { label: "Solution ready", color: "#22C55E", icon: "✅" },
+  rejected: { label: "Not taken forward", color: "#FF5A5F", icon: "✖️" },
+};
+
+function ChallengeBrief({ live }: { live: Live }) {
+  const n = (st: string) => live.challenges.filter((c) => c.status === st).length;
+  return (
+    <div className="pad">
+      <div className="kicker">Challenges & Solutions</div>
+      <h1 className="mega" style={{ fontSize: 104 }}>
+        What slows us down, <span className="grad">and how we fix it</span>
+      </h1>
+      <div className="fb-grid">
+        <div className="fb-steps">
+          {[
+            ["✍️", "Raise a challenge", "Leaders enter real challenges in today’s processes and tasks"],
+            ["🔎", "Trainer reviews", "Clear, specific challenges are approved"],
+            ["🗣️", "Discuss as a team", "Agree on a practical solution together"],
+            ["✅", "Submit the solution", "Add the next step and who owns it"],
+          ].map(([i, t, d], k) => (
+            <div key={t} style={{ animationDelay: `${k * 0.12}s` }}>
+              <span>{i}</span>
+              <b>{t}</b>
+              <small>{d}</small>
+            </div>
+          ))}
+        </div>
+        <div className="glass fb-clock">
+          <small>Challenges so far</small>
+          <b>{live.challenges.length}</b>
+          <div className="ch-mini">
+            <span>⏳ {n("pending")} pending</span>
+            <span>💬 {n("approved")} in discussion</span>
+            <span>✅ {n("solved")} solved</span>
+          </div>
+          <div className="dim" style={{ fontSize: 22 }}>
+            Open the 💡 tab on the leader’s phone
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChallengeBoard({ live }: { live: Live }) {
+  const focusId = live.state.scene === "ch-board" ? Number(live.state.data.focus || 0) : 0;
+  const team = (id: number | null) => live.teams.find((t) => t.id === id);
+  const shown = live.challenges.filter((c) => c.status === "approved" || c.status === "solved").sort((a, b) => (a.status === b.status ? a.id - b.id : a.status === "solved" ? -1 : 1));
+  const pending = live.challenges.filter((c) => c.status === "pending").length;
+  const focus = focusId ? live.challenges.find((c) => c.id === focusId) : null;
+  if (focus) {
+    const t = team(focus.assigned_team ?? focus.team_id);
+    const raisedBy = team(focus.team_id);
+    return (
+      <div className="pad ch-focus" style={{ ["--c" as any]: t?.color }}>
+        <div className="kicker">
+          {focus.area} · raised by {raisedBy?.emoji} {raisedBy?.name}
+        </div>
+        <h2 className="h2" style={{ fontSize: 70 }}>
+          {focus.title}
+        </h2>
+        {focus.details && <p className="ch-f-details">{focus.details}</p>}
+        <div className={"glass ch-f-sol " + focus.status}>
+          <div className="ch-f-h">
+            {focus.status === "solved" ? "✅ Solution" : "💬 Being discussed"} · {t?.emoji} {t?.name}
+          </div>
+          {focus.status === "solved" ? (
+            <>
+              <p>{focus.solution}</p>
+              {focus.next_step && <div className="ch-next">➡️ Next step: {focus.next_step}</div>}
+            </>
+          ) : (
+            <p className="dim">The team is working on a solution…</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="pad">
+      <div className="kicker">
+        Challenges & Solutions · {shown.filter((c) => c.status === "solved").length} solved of {shown.length}
+        {pending ? ` · ${pending} awaiting review` : ""}
+      </div>
+      <h2 className="h2" style={{ fontSize: 64 }}>
+        Challenges board
+      </h2>
+      <div className="ch-grid">
+        {shown.map((c, i) => {
+          const t = team(c.assigned_team ?? c.team_id);
+          const st = CH_STATUS[c.status];
+          return (
+            <div key={c.id} className={"ch-card " + c.status} style={{ ["--c" as any]: t?.color, ["--sc" as any]: st.color, animationDelay: `${i * 0.05}s` }}>
+              <div className="ch-top">
+                <span className="ch-area">{c.area}</span>
+                <span className="ch-team">
+                  {t?.emoji} {t?.name.replace(/^Team /, "")}
+                </span>
+              </div>
+              <div className="ch-title">{c.title}</div>
+              {c.status === "solved" ? (
+                <div className="ch-sol">✅ {c.solution}</div>
+              ) : (
+                <div className="ch-wait">{st.icon} {st.label}</div>
+              )}
+            </div>
+          );
+        })}
+        {shown.length === 0 && <div className="cloud-empty" style={{ position: "static", padding: 60 }}>Waiting for challenges to be approved…</div>}
       </div>
     </div>
   );
