@@ -197,7 +197,7 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
   const [me, setMe] = useState<[number, number] | null>(null);
   const [sel, setSel] = useState<number | null>(null);
   const [filter, setFilter] = useState<"near" | "todo" | "mine" | "all">("near");
-  const [sat, setSat] = useState(false);
+  const [base, setBase] = useState<"street" | "sat" | "vector">("street");
   const [adding, setAdding] = useState<{ lat: number; lon: number } | null>(null);
   const [newName, setNewName] = useState("");
   const [newCat, setNewCat] = useState(CATEGORIES[0]);
@@ -283,13 +283,23 @@ function FieldTab({ live, team, auth, toast }: { live: Live; team: Team; auth: A
             setAdding(null);
           }}
           me={me}
-          satellite={sat}
+          base={base}
           draft={adding ? [adding.lat, adding.lon] : null}
           onMapClick={(lat, lon) => adding && setAdding({ lat, lon })}
         />
       </div>
       <div className="ft-bar">
-        <button onClick={() => setSat(!sat)}>{sat ? "🗺️ Map" : "🛰️ Satellite"}</button>
+        {(
+          [
+            ["street", "🗺️ Map"],
+            ["sat", "🛰️ Satellite"],
+            ["vector", "🏝️ Simple"],
+          ] as const
+        ).map(([k, label]) => (
+          <button key={k} className={base === k ? "on" : ""} onClick={() => setBase(k)}>
+            {label}
+          </button>
+        ))}
         <button
           className={adding ? "on" : ""}
           onClick={() => {

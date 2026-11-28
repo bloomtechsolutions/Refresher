@@ -13,16 +13,18 @@ type Props = {
   me?: [number, number] | null;
   onMapClick?: (lat: number, lon: number) => void;
   satellite?: boolean;
+  base?: "street" | "sat" | "vector";
   draft?: [number, number] | null;
 };
 
-export default function FieldMap({ leads, teams, big, selected, onSelect, me, onMapClick, satellite, draft }: Props) {
+export default function FieldMap({ leads, teams, big, selected, onSelect, me, onMapClick, satellite, draft, base: baseProp }: Props) {
+  const base = baseProp || (big ? "vector" : satellite ? "sat" : "street");
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const L = useRef<any>(null);
   const layer = useRef<any>(null);
   const meLayer = useRef<any>(null);
-  const tiles = useRef<{ street?: any; sat?: any }>({});
+  const tiles = useRef<{ street?: any; sat?: any; vector?: any }>({});
   const fitted = useRef(false);
   const [ready, setReady] = useState(false);
   const clickRef = useRef(onMapClick);
@@ -36,14 +38,45 @@ export default function FieldMap({ leads, teams, big, selected, onSelect, me, on
       const Lf = mod.default || mod;
       L.current = Lf;
       const m = Lf.map(el.current, { zoomControl: !big, attributionControl: true, zoomSnap: 0.25 }).setView(MAAMIGILI_CENTER, 16);
-      tiles.current.street = Lf.tileLayer(big ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-        maxZoom: 20,
-        attribution: "© OpenStreetMap © CARTO",
+      tiles.current.street = Lf.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "© OpenStreetMap contributors",
       });
       tiles.current.sat = Lf.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
         maxZoom: 19,
         attribution: "Imagery © Esri",
       });
+      // our own Maamigili map drawn from the OpenStreetMap extract (works without any tile service)
+      m.createPane("island");
+      m.getPane("island")!.style.zIndex = "250"; // below markers (overlayPane = 400)
+      tiles.current.vector = Lf.layerGroup();
+      fetch("/maamigili.json")
+        .then((r) => r.json())
+        .then((gj) => {
+          const dark = !!big;
+          const st: Record<string, any> = dark
+            ? {
+                island: { color: "#3fb7c8", weight: 3, fillColor: "#16263d", fillOpacity: 1 },
+                green: { stroke: false, fillColor: "#173a30", fillOpacity: 0.9 },
+                beach: { stroke: false, fillColor: "#3a3324", fillOpacity: 0.9 },
+                road: { color: "#5b6785", weight: 3, opacity: 0.9 },
+                runway: { color: "#2b3446", weight: 14, opacity: 1, fillColor: "#2b3446", fillOpacity: 1 },
+                building: { color: "#56688f", weight: 0.6, fillColor: "#33425f", fillOpacity: 1 },
+              }
+            : {
+                island: { color: "#7cc4d8", weight: 2, fillColor: "#f4efe2", fillOpacity: 1 },
+                green: { stroke: false, fillColor: "#d4e9c6", fillOpacity: 1 },
+                beach: { stroke: false, fillColor: "#f3e3b5", fillOpacity: 1 },
+                road: { color: "#ffffff", weight: 4, opacity: 1 },
+                runway: { color: "#b8bcc4", weight: 12, opacity: 1, fillColor: "#b8bcc4", fillOpacity: 1 },
+                building: { color: "#b5ab98", weight: 0.6, fillColor: "#d8cfbe", fillOpacity: 1 },
+              };
+          const order = ["island", "beach", "green", "runway", "road", "building"];
+          order.forEach((k) =>
+            Lf.geoJSON({ ...gj, features: gj.features.filter((f: any) => f.properties.k === k) }, { style: () => st[k], interactive: false, pane: "island" }).addTo(tiles.current.vector)
+          );
+        })
+        .catch(() => {});
       layer.current = Lf.layerGroup().addTo(m);
       meLayer.current = Lf.layerGroup().addTo(m);
       m.on("click", (e: any) => clickRef.current?.(e.latlng.lat, e.latlng.lng));
@@ -62,15 +95,14 @@ export default function FieldMap({ leads, teams, big, selected, onSelect, me, on
   useEffect(() => {
     if (!ready) return;
     const m = map.current;
-    const { street, sat } = tiles.current;
-    if (satellite) {
-      m.removeLayer(street);
-      sat.addTo(m);
-    } else {
-      m.removeLayer(sat);
-      street.addTo(m);
-    }
-  }, [ready, satellite]);
+    const all = tiles.current;
+    (["street", "sat", "vector"] as const).forEach((k) => {
+      if (k === base) all[k].addTo(m);
+      else m.removeLayer(all[k]);
+    });
+    if (base === "vector") all.vector.eachLayer?.((l: any) => l.bringToBack?.());
+    el.current!.style.background = base === "vector" ? (big ? "#061a2e" : "#a9d6ec") : "#0b1026";
+  }, [ready, base, big]);
 
   // markers
   useEffect(() => {
@@ -93,6 +125,11 @@ export default function FieldMap({ leads, teams, big, selected, onSelect, me, on
       if (onSelect) mk.on("click", () => onSelect(l.id));
       mk.addTo(layer.current);
     });
+    if (!fitted.current && big) {
+      // projector: always show the whole of Maamigili
+      map.current.fitBounds([[3.4695, 72.8275], [3.4825, 72.8455]], { padding: [20, 20] });
+      fitted.current = true;
+    }
     if (!fitted.current && leads.length) {
       const b = Lf.latLngBounds(leads.map((l) => [l.lat, l.lon]));
       map.current.fitBounds(b.pad(0.15), { maxZoom: 17 });
